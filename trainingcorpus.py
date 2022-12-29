@@ -1,0 +1,2 @@
+class TrainingCorpus:
+    pass
