@@ -6,17 +6,33 @@ def read_classification_from_file(filename):
     return classify_dict
 
 
-def get_email_derivatives(email):
-    email = email.lower()
-    # split mail by @
-    derivatives = email.split("@")
-    # add to derivates without numbers
-    derivatives.append(''.join(i for i in derivatives[0] if not i.isdigit()))
-    # add to derivates with nums but no spetial chars
-    derivatives.append(''.join(i for i in derivatives[0] if i.isalpha() or i.isdigit()))
-    # add to derivates without nums and specital characters
-    derivatives.append(''.join(i for i in derivatives[0] if i.isalpha()))
-    return derivatives
+# removes unnecesary characters from text
+def skin_text(text):
+    text = remove_brackets(text, "<", ">")
+    text = remove_brackets(text, "(", ")")
+    text = remove_brackets(text, "[", "]")
+    text = remove_brackets(text, "{", "}")
+    text = remove_special_chars(text)
+    return text
+
+# removes brackets or bracketlike parts of text
+def remove_brackets(text, start_brack, end_brack):
+    text_parts = text.split(start_brack)
+    correct = []
+    for text_part in text_parts:
+        text_split = text_part.split(end_brack)
+        if len(text_split) == 1:
+            correct.append(text_split[0])
+        else:
+            correct = correct + text_split[1:]
+    return "".join(i for i in correct)
+
+
+def remove_special_chars(text):
+    to_remove = "_,.;:*-/0123456789"
+    for char in to_remove:
+        text = text.replace(char, "")
+    return text
 
 
 def levenshtein_dist(w1, w2):
@@ -31,9 +47,13 @@ def levenshtein_dist(w1, w2):
                 sub_cost = 0
             else:
                 sub_cost = 1
-            d[i][j] = min([d[i - 1][j] + 1, d[i][j - 1] + 1, d[i-1][j-1] + sub_cost])
+            d[i][j] = min([d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + sub_cost])
     return d[len(w2)][len(w1)]
 
+
 if __name__ == "__main__":
-    print(get_email_derivatives("spilar.vojta123/!@gmail.com"))
-    print(levenshtein_dist("saturday", "sunday"))
+    text = ""
+    with open("train_dir/text1.txt", encoding='utf-8') as f:
+        text = skin_text(f.read())
+    with open("train_dir/out.txt", mode='w', encoding='utf-8') as f:
+        f.write(text)
