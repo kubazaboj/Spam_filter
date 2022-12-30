@@ -1,79 +1,6 @@
 SMOOTH_PAR = 1 #Smoothing parametr for calcuclating the probability of ham/spam
+
 class Bayes:
-    def __init__(self, labels_filename):
-        self.labels_filename = labels_filename
-    
-    def load_emails(self):
-        train_emails = {}
-        #The dictionary of training emails and their labels
-        with open(self.labels_filename, 'r', encoding='utf-8') as labels_file:
-            for line in labels_file:
-                train_emails[line[0]]= line[1]
-            #Opening the prediction to get the dictionary of emails and their label
-        return train_emails
-    
-    def divide_emails_by_labels(self, train_emails):
-        #Dividing messages by their label
-        spam_messages = [spam for spam in train_emails.keys() if train_emails[spam] == "SPAM"]
-        ham_messages = [ham for ham in train_emails.keys() if train_emails[ham] == "HAM"]
-        no_of_emails= len(train_emails) #Total number of all emails
-        pct_spam = len(spam_messages) / no_of_emails #The percantage of spam emails in the training set
-        pct_ham = len(ham_messages) / no_of_emails #The percantage of ham emails in the training set
-        return pct_spam, pct_ham
-    
-    def vocab_loading(self, train_emails):
-        no_words_spam = 0 #Total number of words in all spam messages
-        no_words_ham = 0 #Total number of words in all ham messages
-        vocab_spam = {} #The dictionary consisting of all words used in spam messages
-        vocab_ham = {} #The dictionary consisting of all words used in ham messages
-        for email_file in train_emails.keys():
-            with open(email_file, 'r', encoding='utf-8') as email:
-                #Clean the email from html tags and have only body...
-                #Then create a vocabulary dictionary
-                for line in email:
-                    for word in line:
-                        if train_emails[email_file] == "SPAM":
-                            no_words_spam +=1
-                            if word in vocab_spam.keys():
-                                vocab_spam[word] += 1
-                            else:
-                                vocab_spam[word] = 1
-                        else:
-                            no_words_ham += 1 
-                            if word in vocab_ham.keys():
-                                vocab_ham[word] += 1 
-                            else:
-                                vocab_ham[word] = 1
-        return vocab_spam, vocab_ham, no_words_spam, no_words_ham 
-        
-    
-    
-    def parameters_cals(self, vocab_ham, vocab_spam, no_words_spam):
-        parameters_spam_words = {} #The dictionary of parameters for all words in spam messages 
-        parameters_ham_words = {} #The dictionary of parameters for all words in ham messages
-        vocab_len = self.calc_vocab_len(vocab_ham, vocab_spam)
-        for word in vocab_ham:
-            par_ham_word_given = (vocab_ham[word] + SMOOTH_PAR) / (no_words_spam + SMOOTH_PAR * vocab_len)
-            #Counting the parametr value for specified ham word in the dictionary
-            parameters_ham_words[word] = par_ham_word_given
-            #Adding the parameter to the dictionary of all ham words parameters in the dictionary
-        for word in vocab_spam:
-            par_spam_word_given = (vocab_spam[word] + SMOOTH_PAR) / (no_words_spam + SMOOTH_PAR * vocab_len)
-            #Counting the parametr value for specified spam word in the dictionary
-            parameters_spam_words[word] = par_spam_word_given
-            #Adding the parameter to the dictionary of all spam words parameters in the dictionary
-        return parameters_ham_words, parameters_spam_words
-
-    
-
-"""The searching in the dictionary"""
-#To be done, I honestly tried, but no clue how to exactly calculate it
-        
-
-
-
-''' navrh na zmenu '''
-class Bayes2:
     def __init__(self):
         self.word_spam_count = {}
         self.word_ham_count = {}
@@ -142,8 +69,75 @@ class Bayes2:
             label_words_parameters[word] = par_word_given
         return label_words_parameters
     
+"""Below just old one, if we need any function in it"""    
+    
+class Bayes_old:
+    def __init__(self, labels_filename):
+        self.labels_filename = labels_filename
+    
+    def load_emails(self):
+        train_emails = {}
+        #The dictionary of training emails and their labels
+        with open(self.labels_filename, 'r', encoding='utf-8') as labels_file:
+            for line in labels_file:
+                train_emails[line[0]]= line[1]
+            #Opening the prediction to get the dictionary of emails and their label
+        return train_emails
+    
+    def divide_emails_by_labels(self, train_emails):
+        #Dividing messages by their label
+        spam_messages = [spam for spam in train_emails.keys() if train_emails[spam] == "SPAM"]
+        ham_messages = [ham for ham in train_emails.keys() if train_emails[ham] == "HAM"]
+        no_of_emails= len(train_emails) #Total number of all emails
+        pct_spam = len(spam_messages) / no_of_emails #The percantage of spam emails in the training set
+        pct_ham = len(ham_messages) / no_of_emails #The percantage of ham emails in the training set
+        return pct_spam, pct_ham
+    
+    def vocab_loading(self, train_emails):
+        no_words_spam = 0 #Total number of words in all spam messages
+        no_words_ham = 0 #Total number of words in all ham messages
+        vocab_spam = {} #The dictionary consisting of all words used in spam messages
+        vocab_ham = {} #The dictionary consisting of all words used in ham messages
+        for email_file in train_emails.keys():
+            with open(email_file, 'r', encoding='utf-8') as email:
+                #Clean the email from html tags and have only body...
+                #Then create a vocabulary dictionary
+                for line in email:
+                    for word in line:
+                        if train_emails[email_file] == "SPAM":
+                            no_words_spam +=1
+                            if word in vocab_spam.keys():
+                                vocab_spam[word] += 1
+                            else:
+                                vocab_spam[word] = 1
+                        else:
+                            no_words_ham += 1 
+                            if word in vocab_ham.keys():
+                                vocab_ham[word] += 1 
+                            else:
+                                vocab_ham[word] = 1
+        return vocab_spam, vocab_ham, no_words_spam, no_words_ham 
+        
     
     
+    def parameters_cals(self, vocab_ham, vocab_spam, no_words_spam):
+        parameters_spam_words = {} #The dictionary of parameters for all words in spam messages 
+        parameters_ham_words = {} #The dictionary of parameters for all words in ham messages
+        vocab_len = self.calc_vocab_len(vocab_ham, vocab_spam)
+        for word in vocab_ham:
+            par_ham_word_given = (vocab_ham[word] + SMOOTH_PAR) / (no_words_spam + SMOOTH_PAR * vocab_len)
+            #Counting the parametr value for specified ham word in the dictionary
+            parameters_ham_words[word] = par_ham_word_given
+            #Adding the parameter to the dictionary of all ham words parameters in the dictionary
+        for word in vocab_spam:
+            par_spam_word_given = (vocab_spam[word] + SMOOTH_PAR) / (no_words_spam + SMOOTH_PAR * vocab_len)
+            #Counting the parametr value for specified spam word in the dictionary
+            parameters_spam_words[word] = par_spam_word_given
+            #Adding the parameter to the dictionary of all spam words parameters in the dictionary
+        return parameters_ham_words, parameters_spam_words
+        
+
+
    
     
             
