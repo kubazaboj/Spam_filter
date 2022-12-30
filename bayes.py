@@ -46,10 +46,7 @@ class Bayes:
                                 vocab_ham[word] = 1
         return vocab_spam, vocab_ham, no_words_spam, no_words_ham 
         
-    def calc_vocab_len(self, vocab_ham, vocab_spam):
-        vocab = {**vocab_ham, **vocab_spam}#Merging ham and spam words dictionary together to have all words in one dictionary   
-        vocab_len =  len(vocab)#Total number of words in both, ham and spam words dictionaries                     
-        return vocab_len
+    
     
     def parameters_cals(self, vocab_ham, vocab_spam, no_words_spam):
         parameters_spam_words = {} #The dictionary of parameters for all words in spam messages 
@@ -61,11 +58,13 @@ class Bayes:
             parameters_ham_words[word] = par_ham_word_given
             #Adding the parameter to the dictionary of all ham words parameters in the dictionary
         for word in vocab_spam:
-            par_spam_word_given = (vocab_ham[word] + SMOOTH_PAR) / (no_words_spam + SMOOTH_PAR * vocab_len)
+            par_spam_word_given = (vocab_spam[word] + SMOOTH_PAR) / (no_words_spam + SMOOTH_PAR * vocab_len)
             #Counting the parametr value for specified spam word in the dictionary
             parameters_spam_words[word] = par_spam_word_given
             #Adding the parameter to the dictionary of all spam words parameters in the dictionary
         return parameters_ham_words, parameters_spam_words
+
+    
 
 """The searching in the dictionary"""
 #To be done, I honestly tried, but no clue how to exactly calculate it
@@ -78,21 +77,22 @@ class Bayes2:
     def __init__(self):
         self.word_spam_count = {}
         self.word_ham_count = {}
+        self.spam_words_parameters = {}
+        self.ham_words_parameters = {}
         self.spam_count = 0
         self.ham_count = 0
         self.spam = "SPAM"
         self.ham = "OK"
-
     # call this when training on new mail
-    def add_spam_ham_count(self, spam_ham):
-        if spam_ham == self.spam:
+    def add_spam_ham_count(self, spam_ham_label):
+        if spam_ham_label == self.spam:
             self.spam_count += 1
         else:
             self.ham_count += 1
-
+        
     # call this on every word from mail
-    def add_word(self, word, spam_ham):
-        if spam_ham == self.spam:
+    def add_word(self, word, spam_ham_label):
+        if spam_ham_label == self.spam:
             self.add_to_dict(self.word_spam_count, word)
         else:
             self.add_to_dict(self.word_ham_count, word)
@@ -104,12 +104,20 @@ class Bayes2:
         except KeyError:
             dict[key] = 1
 
+    def calc_vocab_len(self, vocab_ham, vocab_spam):
+    #Function calculating the number of keys aka unique words in both, spam and ham emails
+        vocab = {**vocab_ham, **vocab_spam}#Merging ham and spam words dictionary together to have all words in one dictionary   
+        vocab_len =  len(vocab)#Total number of words in both, ham and spam words dictionaries                     
+        return vocab_len
+    
     # txt by mel byt list slov z mailu na ktery se ptame
     def calculate_ham_chance(self, text):
-        spam_result = 1
-        ham_result = 1
-        ham_perc = self.ham_count / (self.ham_count + self.spam_count)
-        spam_perc = self.spam_count / (self.ham_count + self.spam_count)
+        #spam_result = 1
+        #ham_result = 1
+        all_messages_count = self.ham_count + self.spam_count
+        ham_perc = self.ham_count / all_messages_count
+        spam_perc = self.spam_count / all_messages_count
+        #Tady začíná ta sporná část
         for word in self.word_spam_count.keys():
             if word in text:
                 to_mult = self.word_spam_count[word] / self.spam_count
@@ -124,5 +132,18 @@ class Bayes2:
             ham_result *= to_mult
         is_ham_percentage = ham_result * ham_perc / (ham_result * ham_perc + spam_result * spam_perc)
         return is_ham_percentage
+    
+    def calc_bayes_parameters_dict(self, word_count_dict, vocab_dict):
+        label_words_parameters = {}
+        for word in word_count_dict.keys():
+            par_word_given = (vocab_dict[word] + SMOOTH_PAR) / (label_words_count + SMOOTH_PAR * vocab_len)
+            #Label_words_count is the sum of all values in the spam/ham words dictionary
+            #Vocab_len is the number of all words, aka keys in spam + the unique ones in ham dictionary
+            label_words_parameters[word] = par_word_given
+        return label_words_parameters
+    
+    
+    
+   
     
             
