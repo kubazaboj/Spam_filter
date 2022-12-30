@@ -47,10 +47,11 @@ class Bayes_old:
                             else:
                                 vocab_ham[word] = 1
         return vocab_spam, vocab_ham, no_words_spam, no_words_ham
-
+    
+    """Look how this can be implemented to filter, please"""
+    
     def calc_vocab_len(self, vocab_ham, vocab_spam):
-        vocab = {**vocab_ham,
-                 **vocab_spam}  # Merging ham and spam words dictionary together to have all words in one dictionary
+        vocab = {**vocab_ham, **vocab_spam}  # Merging ham and spam words dictionary together to have all words in one dictionary
         vocab_len = len(vocab)  # Total number of words in both, ham and spam words dictionaries
         return vocab_len
 
@@ -70,6 +71,21 @@ class Bayes_old:
             # Adding the parameter to the dictionary of all spam words parameters in the dictionary
         return parameters_ham_words, parameters_spam_words
 
+    def calc_param_sum_for_email(self, parameters_spam_words, parameters_ham_words, email_words):
+        spam_prob = 0
+        ham_prob = 0
+        for word in email_words:
+            spam_prob += parameters_spam_words[word]
+            ham_prob += parameters_ham_words[word]
+        return spam_prob, ham_prob
+    
+    def label_message(self, spam_prob, ham_prob):
+        if(spam_prob > ham_prob):
+            return "SPAM"
+        elif(spam_prob < ham_prob):
+            return "HAM"
+        else:
+            return "Same probabilities"
 
 """The actual Bayes we are using rn"""
 class Bayes:
@@ -109,7 +125,7 @@ class Bayes:
         spam_perc = self.spam_emails_count / all_emails_count
         spam_probability = self.calc_label_probability(self.spam_words_count, self.spam_emails_count, email_text)
         ham_probability = self.calc_label_probability(self.ham_words_count, self.ham_emails_count, email_text)
-        is_ham_percentage = ham_probability * ham_perc / (ham_probability * ham_perc + spam_probability * spam_perc)
+        is_ham_percentage = (ham_probability * ham_perc) / (ham_probability * ham_perc + spam_probability * spam_perc)
         return is_ham_percentage
     
     def calc_label_probability(self, words_label_count, emails_label_count, email_text):
