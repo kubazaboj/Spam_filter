@@ -1,7 +1,9 @@
 SMOOTH_PAR = 1  # Smoothing parametr for calcuclating the probability of ham/spam
 
+"""The old version, just if we need it."""
 
-class Bayes:
+
+class Bayes_old:
     def __init__(self, labels_filename):
         self.labels_filename = labels_filename
 
@@ -71,35 +73,31 @@ class Bayes:
         return parameters_ham_words, parameters_spam_words
 
 
-"""The searching in the dictionary"""
-# To be done, I honestly tried, but no clue how to exactly calculate it
+"""The actual Bayes we are using rn"""
 
 
-''' navrh na zmenu '''
-
-
-class Bayes2:
+class Bayes:
     def __init__(self):
-        self.word_spam_count = {}
-        self.word_ham_count = {}
-        self.spam_count = 0
-        self.ham_count = 0
+        self.spam_words_count = {}
+        self.ham_words_count = {}
+        self.spam_emails_count = 0
+        self.ham_emails_count = 0
         self.spam = "SPAM"
         self.ham = "OK"
 
     # call this when training on new mail
-    def add_spam_ham_count(self, spam_ham):
-        if spam_ham == self.spam:
-            self.spam_count += 1
+    def add_spam_ham_count(self, email_label):
+        if email_label == self.spam:
+            self.spam_emails_count += 1
         else:
-            self.ham_count += 1
+            self.ham_emails_count += 1
 
     # call this on every word from mail
-    def add_word(self, word, spam_ham):
-        if spam_ham == self.spam:
-            self.add_to_dict(self.word_spam_count, word)
+    def add_word(self, word, email_label):
+        if email_label == self.spam:
+            self.add_to_dict(self.spam_words_count, word)
         else:
-            self.add_to_dict(self.word_ham_count, word)
+            self.add_to_dict(self.ham_words_count, word)
 
     # ads count of given word, if word is not in dictionary it adds it there
     def add_to_dict(self, dict, key):
@@ -109,33 +107,30 @@ class Bayes2:
             dict[key] = 1
 
     # txt by mel byt list slov z mailu na ktery se ptame
-    def calculate_ham_chance(self, text):
-        spam_result = 1
-        ham_result = 1
-        ham_perc = self.ham_count / (self.ham_count + self.spam_count)
-        spam_perc = self.spam_count / (self.ham_count + self.spam_count)
-        for word in self.word_spam_count.keys():
-            if word in text:
-                to_mult = self.word_spam_count[word] / self.spam_count
-            else:
-                to_mult = 1 - self.word_spam_count[word] / self.spam_count
-            if to_mult < 1/self.spam_count:
-                to_mult = 1
-            spam_result *= to_mult
-        for word in self.word_ham_count.keys():
-            if word in text:
-                to_mult = self.word_ham_count[word] / self.ham_count
-            else:
-                to_mult = 1 - self.word_ham_count[word] / self.ham_count
-            if to_mult < 1/self.ham_count:
-                to_mult = 1
-            ham_result *= to_mult
-        if ham_result > spam_result:
-            return 1
-        else:
-            return 0
-        is_ham_percentage = ham_result * ham_perc / (ham_result * ham_perc + spam_result * spam_perc)
+    def calculate_ham_chance(self, email_text):
+        all_emails_count = self.ham_emails_count + self.spam_emails_count
+        ham_perc = self.ham_emails_count / all_emails_count
+        spam_perc = self.spam_emails_count / all_emails_count
+        spam_probability = self.calc_label_probability(self.spam_words_count, self.spam_emails_count, email_text)
+        ham_probability = self.calc_label_probability(self.ham_words_count, self.ham_emails_count, email_text)
+        is_ham_percentage = ham_probability * ham_perc / (ham_probability * ham_perc + spam_probability * spam_perc)
         return is_ham_percentage
+
+    def calc_label_probability(self, words_label_count, emails_label_count, email_text):
+        label_probability = SMOOTH_PAR
+        for word in words_label_count.keys():
+            if word in email_text:
+                word_occurence_percentage = words_label_count[word] / emails_label_count
+            else:
+                word_occurence_percentage = SMOOTH_PAR - words_label_count[word] / emails_label_count
+            label_probability *= word_occurence_percentage
+        return label_probability
+
+
+
+
+
+        
 
 
             
