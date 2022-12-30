@@ -6,3 +6,6 @@ class TrainingCorpus(Corpus):
         file = "!truth.txt"
         with open(self.dirname + "/" + file, encoding='utf-8') as f:
             yield file, f.read()
+
+    def get_train_file_name(self):
+        return self.dirname + "/" + "!truth.txt"

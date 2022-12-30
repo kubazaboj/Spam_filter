@@ -12,13 +12,10 @@ def get_email_derivatives(email):
     derivatives = email.split("@")
     # add to derivates without numbers
     derivatives.append(''.join(i for i in derivatives[0] if not i.isdigit()))
-    derivatives.append(''.join(i for i in derivatives[1] if not i.isdigit()))
     # add to derivates with nums but no spetial chars
     derivatives.append(''.join(i for i in derivatives[0] if i.isalpha() or i.isdigit()))
-    derivatives.append(''.join(i for i in derivatives[1] if i.isalpha() or i.isdigit()))
     # add to derivates without nums and specital characters
     derivatives.append(''.join(i for i in derivatives[0] if i.isalpha()))
-    derivatives.append(''.join(i for i in derivatives[1] if i.isalpha()))
     return derivatives
 
 
