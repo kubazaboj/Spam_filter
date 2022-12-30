@@ -125,7 +125,10 @@ class Bayes2:
                 to_mult = self.word_ham_count[word] / self.ham_count
             else:
                 to_mult = 1 - self.word_ham_count[word] / self.ham_count
+            if to_mult < 1e-1:
+                to_mult = 1
             ham_result *= to_mult
+        print("ups", (ham_result * ham_perc + spam_result * spam_perc))
         is_ham_percentage = ham_result * ham_perc / (ham_result * ham_perc + spam_result * spam_perc)
         return is_ham_percentage
 

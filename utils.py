@@ -28,6 +28,10 @@ def remove_brackets(text, start_brack, end_brack):
     return "".join(i for i in correct)
 
 
+def remove_duplicates(text_list):
+    return list(set(text_list))
+
+
 def remove_special_chars(text):
     to_remove = "_,.;:*-/0123456789"
     for char in to_remove:
