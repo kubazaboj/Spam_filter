@@ -119,16 +119,21 @@ class Bayes2:
                 to_mult = self.word_spam_count[word] / self.spam_count
             else:
                 to_mult = 1 - self.word_spam_count[word] / self.spam_count
+            if to_mult < 1/self.spam_count:
+                to_mult = 1
             spam_result *= to_mult
         for word in self.word_ham_count.keys():
             if word in text:
                 to_mult = self.word_ham_count[word] / self.ham_count
             else:
                 to_mult = 1 - self.word_ham_count[word] / self.ham_count
-            if to_mult < 1e-1:
+            if to_mult < 1/self.ham_count:
                 to_mult = 1
             ham_result *= to_mult
-        print("ups", (ham_result * ham_perc + spam_result * spam_perc))
+        if ham_result > spam_result:
+            return 1
+        else:
+            return 0
         is_ham_percentage = ham_result * ham_perc / (ham_result * ham_perc + spam_result * spam_perc)
         return is_ham_percentage
 

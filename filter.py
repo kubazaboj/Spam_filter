@@ -47,7 +47,9 @@ class MyFilter:
 
 if __name__ == "__main__":
     myFilter = MyFilter()
-    myFilter.train("1")
-    results = myFilter.test("1")
-    print(len([i for i in results if i == "SPAM"]))
-    print(len([i for i in results if i == "OK"]))
+    myFilter.train("2")
+    print("train spam:", myFilter.bayes.spam_count)
+    print("train ham:", myFilter.bayes.ham_count)
+    results = myFilter.test("2")
+    print("spam:", len([i for i in results if i == "SPAM"]))
+    print("ham:", len([i for i in results if i == "OK"]))
