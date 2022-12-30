@@ -1,11 +1,11 @@
 chance@sbcglobal.net OK
 bescoto@icloud.com OK
 dhwon@sbcglobal.net OK
-ubergeeb@icloud.com OK
+ubergeeb@icloud.com SPAM
 sekiya@verizon.net OK
 oracle@hotmail.com OK
 british@sbcglobal.net OK
-dwsauder@msn.com OK
+dwsauder@msn.com SPAM
 ismail@me.com OK
 pedwards@verizon.net OK
 grothoff@att.net OK
