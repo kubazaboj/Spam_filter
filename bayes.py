@@ -19,7 +19,7 @@ class Bayes:
         no_of_emails= len(train_emails) #Total number of all emails
         pct_spam = len(spam_messages) / no_of_emails #The percantage of spam emails in the training set
         pct_ham = len(ham_messages) / no_of_emails #The percantage of ham emails in the training set
-    
+        return pct_spam, pct_ham
     
     def vocab_loading(self, train_emails):
         no_words_spam = 0 #Total number of words in all spam messages
