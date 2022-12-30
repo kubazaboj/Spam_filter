@@ -70,10 +70,59 @@ class Bayes:
 """The searching in the dictionary"""
 #To be done, I honestly tried, but no clue how to exactly calculate it
         
-    
-            
-            
-    
-    
+
+
+
+''' navrh na zmenu '''
+class Bayes2:
+    def __init__(self):
+        self.word_spam_count = {}
+        self.word_ham_count = {}
+        self.spam_count = 0
+        self.ham_count = 0
+        self.spam = "SPAM"
+        self.ham = "OK"
+
+    # call this when training on new mail
+    def add_spam_ham_count(self, spam_ham):
+        if spam_ham == self.spam:
+            self.spam_count += 1
+        else:
+            self.ham_count += 1
+
+    # call this on every word from mail
+    def add_word(self, word, spam_ham):
+        if spam_ham == self.spam:
+            self.add_to_dict(self.word_spam_count, word)
+        else:
+            self.add_to_dict(self.word_ham_count, word)
+
+    # ads count of given word, if word is not in dictionary it adds it there
+    def add_to_dict(self, dict, key):
+        try:
+            dict[key] += 1
+        except KeyError:
+            dict[key] = 1
+
+    # txt by mel byt list slov z mailu na ktery se ptame
+    def calculate_ham_chance(self, text):
+        spam_result = 1
+        ham_result = 1
+        ham_perc = self.ham_count / (self.ham_count + self.spam_count)
+        spam_perc = self.spam_count / (self.ham_count + self.spam_count)
+        for word in self.word_spam_count.keys():
+            if word in text:
+                to_mult = self.word_spam_count[word] / self.spam_count
+            else:
+                to_mult = 1 - self.word_spam_count[word] / self.spam_count
+            spam_result *= to_mult
+        for word in self.word_ham_count.keys():
+            if word in text:
+                to_mult = self.word_ham_count[word] / self.ham_count
+            else:
+                to_mult = 1 - self.word_ham_count[word] / self.ham_count
+            ham_result *= to_mult
+        is_ham_percentage = ham_result * ham_perc / (ham_result * ham_perc + spam_result * spam_perc)
+        return is_ham_percentage
     
             
