@@ -111,20 +111,25 @@ class Bayes:
         all_emails_count = self.ham_emails_count + self.spam_emails_count
         ham_perc = self.ham_emails_count / all_emails_count
         spam_perc = self.spam_emails_count / all_emails_count
-        spam_probability = self.calc_label_probability(self.spam_words_count, self.spam_emails_count, email_text)
-        ham_probability = self.calc_label_probability(self.ham_words_count, self.ham_emails_count, email_text)
+        spam_probability, mult = self.calc_label_probability(self.spam_words_count, self.spam_emails_count, email_text, 1e200)
+        ham_probability, mult = self.calc_label_probability(self.ham_words_count, self.ham_emails_count, email_text, mult)
         is_ham_percentage = ham_probability * ham_perc / (ham_probability * ham_perc + spam_probability * spam_perc)
-        return is_ham_percentage
+        return ham_probability * (self.ham_emails_count / self.spam_emails_count) - spam_probability * (self.spam_emails_count / self.ham_emails_count) + 0.5
+        #return is_ham_percentage
 
-    def calc_label_probability(self, words_label_count, emails_label_count, email_text):
+    def calc_label_probability(self, words_label_count, emails_label_count, email_text, last_multip):
         label_probability = SMOOTH_PAR
+        multiplication = 1
         for word in words_label_count.keys():
             if word in email_text:
                 word_occurence_percentage = words_label_count[word] / emails_label_count
             else:
                 word_occurence_percentage = SMOOTH_PAR - words_label_count[word] / emails_label_count
             label_probability *= word_occurence_percentage
-        return label_probability
+            if(label_probability < 1e-10 and multiplication < last_multip):
+                label_probability *= 1e9
+                multiplication += 1e9
+        return label_probability, multiplication
 
 
 
