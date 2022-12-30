@@ -1,6 +1,6 @@
 from trainingcorpus import TrainingCorpus
 from corpus import Corpus
-from bayes import Bayes2
+from bayes import Bayes
 import utils
 
 
@@ -9,7 +9,7 @@ class MyFilter:
         self.train_dir = {}
         self.spams = []
         self.hams = []
-        self.bayes = Bayes2()
+        self.bayes = Bayes()
 
     def train(self, train_corpus_dir):
         self.init_bayes(train_corpus_dir)
@@ -18,9 +18,12 @@ class MyFilter:
         corpus = Corpus(test_corpus_dir)
         results = []
         for file_name, mail in corpus.emails():
-            if self.evaluate_mail(mail) > 0.5:
+            ham_perc = self.evaluate_mail(mail)
+            if ham_perc > 0.5:
+                print("ok", ham_perc)
                 results.append("OK")
             else:
+                print("spam", ham_perc)
                 results.append("SPAM")
         return results
 
@@ -41,13 +44,16 @@ class MyFilter:
     def get_list_from_txt(self, text):
         text = utils.skin_text(text)
         text_list = text.split()
+        text_list = utils.remove_long(text_list, 20)
         text_list = utils.remove_duplicates(text_list)
         return text_list
 
 
 if __name__ == "__main__":
     myFilter = MyFilter()
-    myFilter.train("1")
-    results = myFilter.test("1")
-    print(len([i for i in results if i == "SPAM"]))
-    print(len([i for i in results if i == "OK"]))
+    myFilter.train("2")
+    print("train spam:", myFilter.bayes.spam_emails_count)
+    print("train ham:", myFilter.bayes.ham_emails_count)
+    results = myFilter.test("2")
+    print("spam:", len([i for i in results if i == "SPAM"]))
+    print("ham:", len([i for i in results if i == "OK"]))

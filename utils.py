@@ -31,6 +31,8 @@ def remove_brackets(text, start_brack, end_brack):
 def remove_duplicates(text_list):
     return list(set(text_list))
 
+def remove_long(text_list, max_len):
+    return [i for i in text_list if len(i) < max_len]
 
 def remove_special_chars(text):
     to_remove = "_,.;:*-/0123456789"

@@ -1,6 +1,8 @@
 SMOOTH_PAR = 1  # Smoothing parametr for calcuclating the probability of ham/spam
 
 """The old version, just if we need it."""
+
+
 class Bayes_old:
     def __init__(self, labels_filename):
         self.labels_filename = labels_filename
@@ -88,6 +90,8 @@ class Bayes_old:
             return "Same probabilities"
 
 """The actual Bayes we are using rn"""
+
+
 class Bayes:
     def __init__(self):
         self.spam_words_count = {}
@@ -125,7 +129,7 @@ class Bayes:
         spam_perc = self.spam_emails_count / all_emails_count
         spam_probability = self.calc_label_probability(self.spam_words_count, self.spam_emails_count, email_text)
         ham_probability = self.calc_label_probability(self.ham_words_count, self.ham_emails_count, email_text)
-        is_ham_percentage = (ham_probability * ham_perc) / (ham_probability * ham_perc + spam_probability * spam_perc)
+        is_ham_percentage = (ham_probability * ham_perc) / ham_probability * ham_perc + spam_probability * spam_perc
         return is_ham_percentage
     
     def calc_label_probability(self, words_label_count, emails_label_count, email_text):
@@ -136,7 +140,12 @@ class Bayes:
             else:
                 word_occurence_percentage = SMOOTH_PAR - words_label_count[word] / emails_label_count
             label_probability *= word_occurence_percentage
-        return label_probability
+        return label_probability - 1
+
+
+
+
+
         
 
 
