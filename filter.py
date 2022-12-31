@@ -44,7 +44,7 @@ class MyFilter:
         no_words_ham = sum(vocab_ham.values())
         parameters_spam_words, parameters_ham_words = self.bay.parameters_calcs(vocab_ham, vocab_spam, no_words_spam, no_words_ham)
         spam_prob, ham_prob = self.bay.calc_param_sum_for_email(parameters_spam_words, parameters_ham_words, text_list)
-        print("Spam probability is " + str(spam_prob) + " and ham probability is " + str(ham_prob))
+        #print("Spam probability is " + str(spam_prob) + " and ham probability is " + str(ham_prob))
         result = self.bay.label_message(spam_prob, ham_prob)
         #ham_perc = self.bayes.calculate_ham_chance(text_list)
         return result

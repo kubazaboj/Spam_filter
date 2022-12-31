@@ -84,7 +84,7 @@ class Bayes_old:
     def label_message(self, spam_prob, ham_prob):
         if(spam_prob > ham_prob):
             return "SPAM"
-        elif(spam_prob < ham_prob):
+        elif(spam_prob * 1.5 < ham_prob):
             return "HAM"
         else:
             return "Same probabilities"
