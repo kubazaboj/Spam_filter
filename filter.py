@@ -1,6 +1,7 @@
 from trainingcorpus import TrainingCorpus
 from corpus import Corpus
 from bayes import Bayes
+from bayes import Bayes_old as bay
 import utils
 
 
@@ -10,6 +11,7 @@ class MyFilter:
         self.spams = []
         self.hams = []
         self.bayes = Bayes()
+        self.bay = bay()
 
     def train(self, train_corpus_dir):
         self.init_bayes(train_corpus_dir)
@@ -18,19 +20,34 @@ class MyFilter:
         corpus = Corpus(test_corpus_dir)
         results = []
         for file_name, mail in corpus.emails():
-            ham_perc = self.evaluate_mail(mail)
-            if ham_perc > 0.5:
-                print("ok", ham_perc)
+            result = self.evaluate_mail(mail)
+            if result == "HAM":
+                print("ok")
                 results.append("OK")
+                for word in mail:
+                    self.bayes.add_to_dict(self.bayes.ham_words_count, word)
             else:
-                print("spam", ham_perc)
+                print("spam")
                 results.append("SPAM")
+                for word in mail:
+                    self.bayes.add_to_dict(self.bayes.spam_words_count, word)
         return results
 
     def evaluate_mail(self, email):
         text_list = self.get_list_from_txt(email)
-        ham_perc = self.bayes.calculate_ham_chance(text_list)
-        return ham_perc
+        #print(text_list)
+        #print(self.bayes.spam_words_count)
+        vocab_ham = self.bayes.ham_words_count
+        vocab_spam = self.bayes.spam_words_count
+        #print(vocab_spam)
+        no_words_spam = sum(vocab_spam.values())
+        no_words_ham = sum(vocab_ham.values())
+        parameters_spam_words, parameters_ham_words = self.bay.parameters_calcs(vocab_ham, vocab_spam, no_words_spam, no_words_ham)
+        spam_prob, ham_prob = self.bay.calc_param_sum_for_email(parameters_spam_words, parameters_ham_words, text_list)
+        print("Spam probability is " + str(spam_prob) + " and ham probability is " + str(ham_prob))
+        result = self.bay.label_message(spam_prob, ham_prob)
+        #ham_perc = self.bayes.calculate_ham_chance(text_list)
+        return result
 
     def init_bayes(self, train_corpus_dir):
         train_corpus = TrainingCorpus(train_corpus_dir)
