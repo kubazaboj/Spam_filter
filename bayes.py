@@ -65,6 +65,8 @@ class Bayes:
             return 0
 
     def calculate_parameters(self):
+        #Function calculating parameters based on their appearance in 
+        #ham and spam training messages
         all_words_counter = self.combine_dictionaries(self.spam_words_counter, self.ham_words_counter)
         self.parameters_ham = {word: 0 for word in list(all_words_counter.keys())}
         self.parameters_spam = {word: 0 for word in list(all_words_counter.keys())}
@@ -78,6 +80,8 @@ class Bayes:
             self.parameters_ham[word] = p_word_ham
 
     def evaluate_message(self, words_list):
+        #Function evaluating the messages based on words in it 
+        #and their parameters
         p_spam_given_mess = self.pct_spam
         p_ham_given_mess = self.pct_ham
         for word in words_list:
