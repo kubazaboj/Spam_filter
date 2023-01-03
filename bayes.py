@@ -88,6 +88,8 @@ class Bayes_new_old:
         self.word_count_ham = 0
         self.word_count_spam = 0
         self.word_count_total = 0
+        self.parameters_ham = {}
+        self.parameters_spam = {}
         self.spam = "SPAM"
         self.ham = "OK"
 
@@ -139,16 +141,26 @@ class Bayes_new_old:
 
     def calculate_parameters(self):
         all_words_counter = self.combine_dictionaries(self.spam_words_counter, self.ham_words_counter)
-        parameters_ham = {word: 0 for word in list(all_words_counter.keys())}
-        parameters_spam = {word: 0 for word in list(all_words_counter.keys())}
+        self.parameters_ham = {word: 0 for word in list(all_words_counter.keys())}
+        self.parameters_spam = {word: 0 for word in list(all_words_counter.keys())}
         for word in all_words_counter.keys():
             n_word_spam = self.try_get_from_dict(self.spam_words_counter, word)
             p_word_spam = (n_word_spam + SMOOTH_PAR) / (self.word_count_spam + SMOOTH_PAR * len(all_words_counter.keys()))
-            parameters_spam[word] = p_word_spam
+            self.parameters_spam[word] = p_word_spam
 
             n_word_ham = self.try_get_from_dict(self.ham_words_counter, word)
             p_word_ham = (n_word_ham + SMOOTH_PAR) / (self.word_count_ham + SMOOTH_PAR * len(all_words_counter.keys()))
-            parameters_ham[word] = p_word_ham
+            self.parameters_ham[word] = p_word_ham
+
+    def evaluate_message(self, words_list):
+        p_spam_given_mess = self.pct_spam
+        p_ham_given_mess = self.pct_ham
+        for word in words_list:
+            if word in self.parameters_spam.keys():
+                p_spam_given_mess *= self.parameters_spam[word]
+            if word in self.parameters_ham.keys():
+                p_ham_given_mess *= self.parameters_ham[word]
+        return p_spam_given_mess, p_ham_given_mess
 
 
 class Bayes:
