@@ -29,6 +29,7 @@ def remove_brackets(text, start_brack, end_brack):
 
 
 def remove_duplicates(text_list):
+    text_list = [i.lower() for i in text_list]
     return list(set(text_list))
 
 def remove_long(text_list, max_len):
@@ -61,5 +62,10 @@ if __name__ == "__main__":
     text = ""
     with open("train_dir/text1.txt", encoding='utf-8') as f:
         text = skin_text(f.read())
+    text = skin_text(text)
+    text = text.split()
+    text = remove_duplicates(text)
+    remove_long(text, 20)
     with open("train_dir/out.txt", mode='w', encoding='utf-8') as f:
-        f.write(text)
+        for i in text:
+            f.write(i + " ")
