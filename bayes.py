@@ -92,7 +92,6 @@ class Bayes:
         return p_spam_given_mess, p_ham_given_mess
 
     def clean_dictionaries(self):
-        print("ham words:", len(self.ham_words_counter.keys()), "spam words:", len(self.spam_words_counter.keys()))
         # remove any words with less than min_num occurences
         min_num = 3
         spam_keys = list(self.spam_words_counter.keys())
@@ -107,7 +106,6 @@ class Bayes:
                 self.word_count_ham -= self.ham_words_counter[i]
                 self.word_count_total -= self.ham_words_counter[i]
                 self.ham_words_counter.pop(i)
-        print("by count", "ham words:", len(self.ham_words_counter.keys()), "spam words:", len(self.spam_words_counter.keys()))
 
         # remove words that appear in both spam and ham_filter
         # min_dif_mult = how many times bigger chance must there be to take as substantial evidence
@@ -131,4 +129,3 @@ class Bayes:
                     self.word_count_ham -= self.ham_words_counter[key]
                     self.word_count_total -= self.ham_words_counter[key]
                     self.ham_words_counter.pop(key)
-        print("same in both", "ham words:", len(self.ham_words_counter.keys()), "spam words:", len(self.spam_words_counter.keys()))
