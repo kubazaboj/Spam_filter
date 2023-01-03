@@ -66,8 +66,8 @@ class Bayes:
 
     def calculate_parameters(self):
         all_words_counter = self.combine_dictionaries(self.spam_words_counter, self.ham_words_counter)
-        self.parameters_ham = {word:0 for word in list(all_words_counter.keys())}
-        self.parameters_spam = {word:0 for word in list(all_words_counter.keys())}
+        self.parameters_ham = {word: 0 for word in list(all_words_counter.keys())}
+        self.parameters_spam = {word: 0 for word in list(all_words_counter.keys())}
         for word in all_words_counter.keys():
             n_word_spam = self.try_get_from_dict(self.spam_words_counter, word)
             p_word_spam = (n_word_spam + SMOOTH_PAR) / (self.word_count_spam + SMOOTH_PAR * len(all_words_counter.keys()))
@@ -90,7 +90,7 @@ class Bayes:
     def clean_dictionaries(self):
         print("ham words:", len(self.ham_words_counter.keys()), "spam words:", len(self.spam_words_counter.keys()))
         # remove any words with less than min_num occurences
-        min_num = 2
+        min_num = 3
         spam_keys = list(self.spam_words_counter.keys())
         for i in spam_keys:
             if self.spam_words_counter[i] < min_num:
@@ -107,12 +107,12 @@ class Bayes:
 
         # remove words that appear in both spam and ham_filter
         # min_dif_mult = how many times bigger chance must there be to take as substantial evidence
-        min_dif_mult = 8
+        min_dif_mult = 3
         spam_keys = list(self.spam_words_counter.keys())
         for key in spam_keys:
             if key in self.ham_words_counter.keys():
-                word_spam_perc = self.spam_words_counter[key]/self.spam_emails_count
-                word_ham_perc = self.ham_words_counter[key]/self.ham_emails_count
+                word_spam_perc = self.spam_words_counter[key]/self.word_count_spam
+                word_ham_perc = self.ham_words_counter[key]/self.word_count_ham
                 if max(word_spam_perc, word_ham_perc) / min(word_spam_perc, word_ham_perc) < min_dif_mult:
                     self.word_count_ham -= self.ham_words_counter[key]
                     self.word_count_spam -= self.spam_words_counter[key]
