@@ -1,6 +1,8 @@
 from trainingcorpus import TrainingCorpus
 from corpus import Corpus
 from bayes import Bayes
+from bayes import Bayes_old
+from quality import compute_quality_for_corpus
 import utils
 
 
@@ -13,6 +15,7 @@ class MyFilter:
 
     def train(self, train_corpus_dir):
         self.init_bayes(train_corpus_dir)
+        self.bayes.clean_dictionaries()
 
     def test(self, test_corpus_dir):
         corpus = Corpus(test_corpus_dir)
@@ -20,11 +23,10 @@ class MyFilter:
         for file_name, mail in corpus.emails():
             ham_perc = self.evaluate_mail(mail)
             if ham_perc > 0.5:
-                print("ok", ham_perc)
-                results.append("OK")
+                results.append((file_name, "OK"))
             else:
-                print("spam", ham_perc)
-                results.append("SPAM")
+                results.append((file_name, "SPAM"))
+        self.write_to_file(results, test_corpus_dir)
         return results
 
     def evaluate_mail(self, email):
@@ -40,6 +42,12 @@ class MyFilter:
             for word in text:
                 self.bayes.add_word(word, spam_ham)
 
+    def write_to_file(self, results, test_corpus_dir):
+        with open(test_corpus_dir + "/!prediction.txt", "w") as f:
+            for file_name, spam_ham in results:
+                f.write(file_name + " " + spam_ham + "\n")
+
+
     #removes not intresting parts of texts and converts it to list without duplicates
     def get_list_from_txt(self, text):
         text = utils.skin_text(text)
@@ -50,10 +58,13 @@ class MyFilter:
 
 
 if __name__ == "__main__":
+    train_dir = "2"
+    test_dir = "1"
     myFilter = MyFilter()
-    myFilter.train("2")
+    myFilter.train(train_dir)
     print("train spam:", myFilter.bayes.spam_emails_count)
     print("train ham:", myFilter.bayes.ham_emails_count)
-    results = myFilter.test("2")
-    print("spam:", len([i for i in results if i == "SPAM"]))
-    print("ham:", len([i for i in results if i == "OK"]))
+    results = myFilter.test(test_dir)
+    print("spam:", len([i for i in results if i[1] == "SPAM"]))
+    print("ham:", len([i for i in results if i[1] == "OK"]))
+    print("quality", compute_quality_for_corpus(test_dir))

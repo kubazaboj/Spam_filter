@@ -76,6 +76,81 @@ class Bayes_old:
 """The actual Bayes we are using rn"""
 
 
+class Bayes_new_old:
+    def __init__(self):
+        self.spam_words_counter = {}
+        self.ham_words_counter = {}
+        self.spam_emails_count = 0
+        self.ham_emails_count = 0
+        self.total_email_count = 0
+        self.pct_spam = 0
+        self.pct_ham = 0
+        self.word_count_ham = 0
+        self.word_count_spam = 0
+        self.word_count_total = 0
+        self.spam = "SPAM"
+        self.ham = "OK"
+
+        # call this when training on new mail
+
+    def add_spam_ham_count(self, email_label):
+        self.total_email_count += 1
+        if email_label == self.spam:
+            self.spam_emails_count += 1
+            self.pct_spam = self.spam_emails_count / self.total_email_count
+        else:
+            self.ham_emails_count += 1
+            self.pct_ham = self.ham_emails_count / self.total_email_count
+
+        # call this on every word from mail
+
+    def add_word(self, word, email_label):
+        self.word_count_total += 1
+        if email_label == self.spam:
+            self.add_to_dict(self.spam_words_counter, word)
+            self.word_count_spam += 1
+        else:
+            self.add_to_dict(self.ham_words_counter, word)
+            self.word_count_ham += 1
+
+        # ads count of given word, if word is not in dictionary it adds it there
+
+    def add_to_dict(self, dict, key):
+        try:
+            dict[key] += 1
+        except KeyError:
+            dict[key] = 1
+
+    def combine_dictionaries(self, dict1, dict2):
+        new_dict = {}
+        for key in dict1.keys():
+            new_dict[key] = dict1[key]
+        for key in dict2.keys():
+            try:
+                new_dict[key] += dict2[key]
+            except KeyError:
+                new_dict[key] = dict2
+
+    def try_get_from_dict(self, dict1, key):
+        try:
+            return dict1[key]
+        except KeyError:
+            return 0
+
+    def calculate_parameters(self):
+        all_words_counter = self.combine_dictionaries(self.spam_words_counter, self.ham_words_counter)
+        parameters_ham = {word: 0 for word in list(all_words_counter.keys())}
+        parameters_spam = {word: 0 for word in list(all_words_counter.keys())}
+        for word in all_words_counter.keys():
+            n_word_spam = self.try_get_from_dict(self.spam_words_counter, word)
+            p_word_spam = (n_word_spam + SMOOTH_PAR) / (self.word_count_spam + SMOOTH_PAR * len(all_words_counter.keys()))
+            parameters_spam[word] = p_word_spam
+
+            n_word_ham = self.try_get_from_dict(self.ham_words_counter, word)
+            p_word_ham = (n_word_ham + SMOOTH_PAR) / (self.word_count_ham + SMOOTH_PAR * len(all_words_counter.keys()))
+            parameters_ham[word] = p_word_ham
+
+
 class Bayes:
     def __init__(self):
         self.spam_words_count = {}
@@ -106,41 +181,59 @@ class Bayes:
         except KeyError:
             dict[key] = 1
 
-    # txt by mel byt list slov z mailu na ktery se ptame
-    def calculate_ham_chance(self, email_text):
-        max_num = 11
-        min_num = 10
+    # removes unimportant parts of ham and spam dictionaries
+    def clean_dictionaries(self):
+        print("ham words:", len(self.ham_words_count.keys()), "spam words:", len(self.spam_words_count.keys()))
+        # remove any words with less than min_num occurences
+        min_num = 3
         spam_keys = list(self.spam_words_count.keys())
         for i in spam_keys:
-            if self.spam_words_count[i] < min_num or self.spam_words_count[i] > max_num:
+            if self.spam_words_count[i] < min_num:
                 self.spam_words_count.pop(i)
         ham_keys = list(self.ham_words_count.keys())
         for i in ham_keys:
-            if self.ham_words_count[i] < min_num or self.ham_words_count[i] > max_num:
+            if self.ham_words_count[i] < min_num:
                 self.ham_words_count.pop(i)
+        print("by count", "ham words:", len(self.ham_words_count.keys()), "spam words:", len(self.spam_words_count.keys()))
 
-        print(len(self.spam_words_count), len(self.ham_words_count))
+        # remove words that appear in both spam and ham_filter
+        # min_dif_mult = how many times bigger chance must there be to take as substantial evidence
+        min_dif_mult = 3
+        spam_keys = list(self.spam_words_count.keys())
+        for spam_word in spam_keys:
+            if spam_word in self.ham_words_count.keys():
+                word_spam_perc = self.spam_words_count[spam_word]/self.spam_emails_count
+                word_ham_perc = self.ham_words_count[spam_word]/self.ham_emails_count
+                if max(word_spam_perc, word_ham_perc) / min(word_spam_perc, word_ham_perc) < min_dif_mult:
+                    self.ham_words_count.pop(spam_word)
+                    self.spam_words_count.pop(spam_word)
+                elif word_spam_perc < word_ham_perc:
+                    self.spam_words_count.pop(spam_word)
+                else:
+                    self.ham_words_count.pop(spam_word)
+        print("same in both", "ham words:", len(self.ham_words_count.keys()), "spam words:", len(self.spam_words_count.keys()))
 
 
-
+    # txt by mel byt list slov z mailu na ktery se ptame
+    def calculate_ham_chance(self, email_text):
         all_emails_count = self.ham_emails_count + self.spam_emails_count
         ham_perc = self.ham_emails_count / all_emails_count
         spam_perc = self.spam_emails_count / all_emails_count
-        spam_probability, mult = self.calc_label_probability(self.spam_words_count, self.spam_emails_count, email_text)
-        ham_probability, mult = self.calc_label_probability(self.ham_words_count, self.ham_emails_count, email_text)
+        spam_probability= self.calc_label_probability(self.spam_words_count, self.spam_emails_count, email_text)
+        ham_probability= self.calc_label_probability(self.ham_words_count, self.ham_emails_count, email_text)
+        #print(ham_probability, spam_probability)
         is_ham_percentage = ham_probability * ham_perc / (ham_probability * ham_perc + spam_probability * spam_perc)
         return is_ham_percentage
 
     def calc_label_probability(self, words_label_count, emails_label_count, email_text):
         label_probability = SMOOTH_PAR
-        multiplication = 1
         for word in words_label_count.keys():
             if word in email_text:
                 word_occurence_percentage = words_label_count[word] / emails_label_count
             else:
                 word_occurence_percentage = SMOOTH_PAR - words_label_count[word] / emails_label_count
             label_probability *= word_occurence_percentage
-        return label_probability, multiplication
+        return label_probability
 
 
 
