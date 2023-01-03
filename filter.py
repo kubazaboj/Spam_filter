@@ -82,6 +82,7 @@ class MyFilter:
             for word in train_mail.split():
                 new_counter.add_word(word)
             new_counter.calculate_percentages()
+            print(new_counter)
             # check if any patterns are close to spam_pattern_counter
             if spam_ham == "SPAM":
                 for pattern in new_counter.percentages.keys():

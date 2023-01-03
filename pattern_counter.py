@@ -17,11 +17,16 @@ class Pattern_counter:
 
     # checks if word has capslock if yes adds to caps_count
     def check_caps_lock(self, word):
-        for letter in word:
-            self.letter_count += 1
-            if not letter.islower() and letter.isalpha():
-                self.caps_count += 1
-                self.add_to_dict(self.importance, "Caps", value=0)
+        self.word_count += 1
+        if word.isupper():
+            self.caps_count += 1
+            self.add_to_dict(self.importance, "Caps")
+             
+        #for letter in word:
+        #    self.letter_count += 1
+        #    if not letter.islower() and letter.isalpha():
+        #        self.caps_count += 1
+        #        self.add_to_dict(self.importance, "Caps", value=0)
 
     # check word for charackters, adds to char_counts dictionary
     def check_char(self, word, char):
@@ -39,5 +44,8 @@ class Pattern_counter:
     def calculate_percentages(self):
         for key in self.char_counts.keys():
             self.percentages[key] = self.char_counts[key] / self.word_count
-        self.percentages["Caps"] = self.caps_count / self.letter_count
+        print("All Caps: " + str(self.caps_count))
+        print("All words in email: " + str(self.word_count))
+        self.percentages["Caps"] = self.caps_count / self.word_count
+        print("Average no. Caps in spam: " + str(self.percentages["Caps"]))
         return self.percentages
