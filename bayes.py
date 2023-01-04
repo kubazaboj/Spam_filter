@@ -85,10 +85,19 @@ class Bayes:
         p_spam_given_mess = self.pct_spam
         p_ham_given_mess = self.pct_ham
         for word in words_list:
+            multip = False
+            multiplier = 1
             if word in self.parameters_spam.keys():
                 p_spam_given_mess *= self.parameters_spam[word]
+                multiplier = self.parameters_spam[word]
+                multip = True
             if word in self.parameters_ham.keys():
                 p_ham_given_mess *= self.parameters_ham[word]
+                multiplier = self.parameters_ham[word]
+                multip = True
+            if multip:
+                p_spam_given_mess *= 1 /multiplier
+                p_ham_given_mess *= 1 / multiplier
         return p_spam_given_mess, p_ham_given_mess
 
     def clean_dictionaries(self):
