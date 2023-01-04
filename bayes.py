@@ -65,8 +65,8 @@ class Bayes:
             return 0
 
     def calculate_parameters(self):
-        #Function calculating parameters based on their appearance in 
-        #ham and spam training messages
+        # Function calculating parameters based on their appearance in
+        # ham and spam training messages
         all_words_counter = self.combine_dictionaries(self.spam_words_counter, self.ham_words_counter)
         self.parameters_ham = {word: 0 for word in list(all_words_counter.keys())}
         self.parameters_spam = {word: 0 for word in list(all_words_counter.keys())}
@@ -79,56 +79,99 @@ class Bayes:
             p_word_ham = (n_word_ham + SMOOTH_PAR) / (self.word_count_ham + SMOOTH_PAR * len(all_words_counter.keys()))
             self.parameters_ham[word] = p_word_ham
 
+    # Function evaluating the messages based on words in it
+    # and their parameters
+
     def evaluate_message(self, words_list):
-        #Function evaluating the messages based on words in it 
-        #and their parameters
         p_spam_given_mess = self.pct_spam
         p_ham_given_mess = self.pct_ham
         for word in words_list:
+            multip = False
+            multiplier = 1
             if word in self.parameters_spam.keys():
                 p_spam_given_mess *= self.parameters_spam[word]
+                multiplier = self.parameters_spam[word]
+                multip = True
             if word in self.parameters_ham.keys():
                 p_ham_given_mess *= self.parameters_ham[word]
+                multiplier = self.parameters_ham[word]
+                multip = True
+            if multip:
+                p_spam_given_mess *= 1 / multiplier
+                p_ham_given_mess *= 1 / multiplier
         return p_spam_given_mess, p_ham_given_mess
 
     def clean_dictionaries(self):
-        print("ham words:", len(self.ham_words_counter.keys()), "spam words:", len(self.spam_words_counter.keys()))
-        # remove any words with less than min_num occurences
+        # minimal count of words allowed is spam or ham dictionary
+        min_dict_len = 1000
+        # remove any words with less than min_num occurences in dictionaries
         min_num = 3
         spam_keys = list(self.spam_words_counter.keys())
-        for i in spam_keys:
-            if self.spam_words_counter[i] < min_num:
-                self.word_count_spam -= self.spam_words_counter[i]
-                self.word_count_total -= self.spam_words_counter[i]
-                self.spam_words_counter.pop(i)
+        for key in spam_keys:
+            if self.spam_words_counter[key] < min_num and len(self.spam_words_counter.keys()) > min_dict_len:
+                self.pop_key_spam(key)
         ham_keys = list(self.ham_words_counter.keys())
-        for i in ham_keys:
-            if self.ham_words_counter[i] < min_num:
-                self.word_count_ham -= self.ham_words_counter[i]
-                self.word_count_total -= self.ham_words_counter[i]
-                self.ham_words_counter.pop(i)
-        print("by count", "ham words:", len(self.ham_words_counter.keys()), "spam words:", len(self.spam_words_counter.keys()))
+        for key in ham_keys:
+            if self.ham_words_counter[key] < min_num and len(self.ham_words_counter.keys()) > min_dict_len:
+                self.pop_key_ham(key)
 
         # remove words that appear in both spam and ham_filter
-        # min_dif_mult = how many times bigger chance must there be to take as substantial evidence
-        min_dif_mult = 3
+        # min_dif_mult = how many times bigger chance must probability be to take as substantial evidence
+        min_dif_mult = 4
         spam_keys = list(self.spam_words_counter.keys())
         for key in spam_keys:
-            if key in self.ham_words_counter.keys():
+            spam_len_ok = len(self.spam_words_counter.keys()) > min_dict_len
+            ham_len_ok = len(self.ham_words_counter.keys()) > min_dict_len
+            if key in self.ham_words_counter.keys() and spam_len_ok and ham_len_ok:
                 word_spam_perc = self.spam_words_counter[key]/self.word_count_spam
                 word_ham_perc = self.ham_words_counter[key]/self.word_count_ham
                 if max(word_spam_perc, word_ham_perc) / min(word_spam_perc, word_ham_perc) < min_dif_mult:
-                    self.word_count_ham -= self.ham_words_counter[key]
-                    self.word_count_spam -= self.spam_words_counter[key]
-                    self.word_count_total -= self.ham_words_counter[key] + self.spam_words_counter[key]
-                    self.ham_words_counter.pop(key)
-                    self.spam_words_counter.pop(key)
+                    self.pop_key_both(key)
                 elif word_spam_perc < word_ham_perc:
-                    self.word_count_spam -= self.spam_words_counter[key]
-                    self.word_count_total -= self.spam_words_counter[key]
-                    self.spam_words_counter.pop(key)
+                    self.pop_key_spam(key)
                 else:
-                    self.word_count_ham -= self.ham_words_counter[key]
-                    self.word_count_total -= self.ham_words_counter[key]
-                    self.ham_words_counter.pop(key)
-        print("same in both", "ham words:", len(self.ham_words_counter.keys()), "spam words:", len(self.spam_words_counter.keys()))
+                    self.pop_key_ham(key)
+        # remove words shorter than min_len from dictionary
+        min_len = 4
+        spam_keys = list(self.spam_words_counter.keys())
+        for key in spam_keys:
+            if len(key) < min_len and len(self.spam_words_counter.keys()) > min_dict_len:
+                self.pop_key_spam(key)
+        ham_keys = list(self.ham_words_counter.keys())
+        for key in ham_keys:
+            if len(key) < min_len and len(self.ham_words_counter.keys()) > min_dict_len:
+                self.pop_key_ham(key)
+
+        # removes words with the least probability from dictionaries
+        to_take = -int(len(self.spam_words_counter)/20)
+        to_sort = list(self.spam_words_counter.keys())
+        probability_bordrer_key = sorted(to_sort, key=lambda item : self.spam_words_counter[item])[to_take]
+        min_prob = self.spam_words_counter[probability_bordrer_key] / self.word_count_spam
+        spam_keys = list(self.spam_words_counter.keys())
+
+        for key in spam_keys:
+            spam_len_ok = len(self.spam_words_counter.keys()) > min_dict_len
+            if self.spam_words_counter[key] / self.word_count_spam < min_prob and spam_len_ok:
+                self.pop_key_spam(key)
+        ham_keys = list(self.ham_words_counter.keys())
+        for key in ham_keys:
+            ham_len_ok = len(self.ham_words_counter.keys()) > min_dict_len
+            if self.ham_words_counter[key] / self.word_count_ham < min_prob  and ham_len_ok:
+                self.pop_key_ham(key)
+
+    def pop_key_spam(self, key):
+        self.word_count_spam -= self.spam_words_counter[key]
+        self.word_count_total -= self.spam_words_counter[key]
+        self.spam_words_counter.pop(key)
+
+    def pop_key_ham(self, key):
+        self.word_count_ham -= self.ham_words_counter[key]
+        self.word_count_total -= self.ham_words_counter[key]
+        self.ham_words_counter.pop(key)
+
+    def pop_key_both(self, key):
+        self.word_count_ham -= self.ham_words_counter[key]
+        self.word_count_spam -= self.spam_words_counter[key]
+        self.word_count_total -= self.ham_words_counter[key] + self.spam_words_counter[key]
+        self.ham_words_counter.pop(key)
+        self.spam_words_counter.pop(key)

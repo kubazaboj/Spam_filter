@@ -7,6 +7,7 @@ def read_classification_from_file(filename):
 
 
 # removes unnecesary characters from text
+
 def skin_text(text):
     text = remove_brackets(text, "<", ">")
     text = remove_brackets(text, "(", ")")
@@ -17,6 +18,7 @@ def skin_text(text):
 
 
 # removes brackets or bracketlike parts of text
+
 def remove_brackets(text, start_brack, end_brack):
     text_parts = text.split(start_brack)
     correct = []
@@ -39,29 +41,13 @@ def remove_long(text_list, max_len):
 
 
 def remove_special_chars(text):
-    to_remove = "\'\"=_,.;:*-/0123456789"
+    to_remove = "\'\"=_,.;:*-0123456789/"
     for char in to_remove:
         text = text.replace(char, "")
     to_isolate = "+&#$?!@"
     for char in to_isolate:
         text = text.replace(char, " " + char + " ")
     return text
-
-
-def levenshtein_dist(w1, w2):
-    d = [[0 for i in range(len(w1) + 1)] for j in range(len(w2) + 1)]
-    for i in range(1, len(w2) + 1):
-        d[i][0] = i
-    for i in range(1, len(w1) + 1):
-        d[0][i] = i
-    for i in range(1, len(w2) + 1):
-        for j in range(1, len(w1) + 1):
-            if w1[j - 1] == w2[i - 1]:
-                sub_cost = 0
-            else:
-                sub_cost = 1
-            d[i][j] = min([d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + sub_cost])
-    return d[len(w2)][len(w1)]
 
 
 if __name__ == "__main__":
