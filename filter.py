@@ -17,7 +17,7 @@ class MyFilter:
         self.pattern_threshold = 0.01
         self.importance_jump = 1.05
         self.avg_caps = 0
-        self.caps_importance = 5
+        self.caps_importance = 0
 
 
     def train(self, train_corpus_dir):
@@ -38,11 +38,13 @@ class MyFilter:
         return results
 
     def evaulate_mail(self, email):
+        # capslock bonus
         counter = Pattern_counter()
         for word in email.split():
             counter.add_word(word)
         caps_avg = counter.caps_count / counter.word_count
         spam_boost = (caps_avg / self.avg_caps) * self.caps_importance + 1
+        #bayes
         text_list = self.get_list_from_txt(email)
         spam, ham = self.bayes.evaluate_message(text_list)
         return spam * spam_boost, ham
@@ -56,6 +58,7 @@ class MyFilter:
             text = self.get_list_from_txt(train_mail)
             for word in text:
                 self.bayes.add_word(word, spam_ham)
+        # spam avg calculation
             counter = Pattern_counter()
             if spam_ham == "SPAM":
                 mail_count += 1
@@ -82,7 +85,7 @@ class MyFilter:
 
 if __name__ == "__main__":
     train_dir = "2"
-    test_dir = "2"
+    test_dir = "1"
     myFilter = MyFilter()
     t0 = time.time_ns()
     myFilter.train(train_dir)
@@ -92,3 +95,5 @@ if __name__ == "__main__":
     print("ham:", len([i for i in results2 if i[1] == "OK"]))
     print("quality", compute_quality_for_corpus(test_dir))
     print("caps avg:", myFilter.avg_caps)
+    #for i in myFilter.bayes.spam_words_counter.keys():
+    #    print(i)

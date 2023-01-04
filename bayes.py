@@ -129,3 +129,17 @@ class Bayes:
                     self.word_count_ham -= self.ham_words_counter[key]
                     self.word_count_total -= self.ham_words_counter[key]
                     self.ham_words_counter.pop(key)
+
+        min_len = 4
+        spam_keys = list(self.spam_words_counter.keys())
+        for key in spam_keys:
+            if len(key) < min_len:
+                self.word_count_spam -= self.spam_words_counter[key]
+                self.word_count_total -= self.spam_words_counter[key]
+                self.spam_words_counter.pop(key)
+        ham_keys = list(self.ham_words_counter.keys())
+        for key in ham_keys:
+            if len(key) < min_len:
+                self.word_count_ham -= self.ham_words_counter[key]
+                self.word_count_total -= self.ham_words_counter[key]
+                self.ham_words_counter.pop(key)
