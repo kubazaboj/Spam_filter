@@ -41,7 +41,7 @@ def remove_long(text_list, max_len):
 
 
 def remove_special_chars(text):
-    to_remove = "\'\"=_,.;:*-/0123456789"
+    to_remove = "\'\"=_,.;:*-0123456789/"
     for char in to_remove:
         text = text.replace(char, "")
     to_isolate = "+&#$?!@"

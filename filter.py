@@ -1,5 +1,3 @@
-import time
-
 from trainingcorpus import TrainingCorpus
 from corpus import Corpus
 from bayes import Bayes
@@ -26,26 +24,20 @@ class MyFilter:
         corpus = Corpus(test_corpus_dir)
         results = []
         for file_name, email in corpus.emails():
-            results.append((file_name, self.evaluate_mail(email)))
+            results.append((file_name, self.evaluate_mail(email, file_name)))
         self.write_to_file(results, test_corpus_dir)
         return results
 
-    def evaluate_mail(self, email):
+    def evaluate_mail(self, email, filename):
         if self.find_email_address(email) in self.blacklist:
             return "SPAM"
         text_list = self.get_list_from_txt(email)
         spam_perc, ham_perc = self.bayes.evaluate_message(text_list)
         if spam_perc > ham_perc:
             return "SPAM"
-        caps_line_count = 0
         counter = Pattern_counter()
-        for line in email.split("\n"):
-            if self.check_caps_line(utils.skin_text(line)):
-                caps_line_count += 1
-            for word in line.split():
-                counter.add_word(word)
-        if caps_line_count > 5:
-            return "SPAM"
+        for word in email.split():
+            counter.add_word(word)
         email_caps_char_avgs = counter.calculate_percentages()
         for char in email_caps_char_avgs.keys():
             if email_caps_char_avgs[char] > (self.max_caps_chars_avgs[char]) * 0.5:
@@ -127,9 +119,7 @@ if __name__ == "__main__":
     train_dir = "2"
     test_dir = "1"
     myFilter = MyFilter()
-    t0 = time.time_ns()
     myFilter.train(train_dir)
-    print("train time:", (time.time_ns() - t0) / 1e6, "ms")
     results2 = myFilter.test(test_dir)
     print("spam:", len([i for i in results2 if i[1] == "SPAM"]))
     print("ham:", len([i for i in results2 if i[1] == "OK"]))
