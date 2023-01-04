@@ -149,10 +149,8 @@ class Bayes:
                 self.ham_words_counter.pop(key)
 
         #odsrani z dictionaries slova s mensi pravdepodobnosti nez min_prob
-        #min_prob = self.spam_words_counter[sorted(list(self.spam_words_counter).keys(), key=lambda item : self.spam_words_counter[item])[-int(
-        #    len(self.spam_words_counter)/20)]] / self.word_count_spam
-        #print(min_prob)
-        min_prob = 0.001
+        min_prob = self.spam_words_counter[sorted(list(self.spam_words_counter.keys()), key=lambda item : self.spam_words_counter[item])[-int(
+            len(self.spam_words_counter)/20)]] / self.word_count_spam
         spam_keys = list(self.spam_words_counter.keys())
         for key in spam_keys:
             if self.spam_words_counter[key] / self.word_count_spam < min_prob and len(self.spam_words_counter.keys()) > min_dict_len:

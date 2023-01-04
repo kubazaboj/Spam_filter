@@ -16,8 +16,8 @@ class MyFilter:
         self.bayes = Bayes()
         self.pattern_threshold = 0.01
         self.importance_jump = 1.05
-        self.avg_caps = 0
         self.caps_importance = 0
+        self.caps_avgs = {}
 
 
     def train(self, train_corpus_dir):
@@ -29,8 +29,13 @@ class MyFilter:
         corpus = Corpus(test_corpus_dir)
         results = []
         for file_name, mail in corpus.emails():
-            spam_perc, ham_perc = self.evaulate_mail(mail)
+            spam_perc, ham_perc, caps_avg = self.evaulate_mail(mail)
+
+
+
             if spam_perc > ham_perc:
+                results.append((file_name, "SPAM"))
+            elif caps_avg > self.caps_avgs["SPAM"] and spam_perc == ham_perc:
                 results.append((file_name, "SPAM"))
             else:
                 results.append((file_name, "OK"))
@@ -44,16 +49,15 @@ class MyFilter:
         for word in email.split():
             counter.add_word(word)
         caps_avg = counter.caps_count / counter.word_count
-        spam_boost = (caps_avg / self.avg_caps) * self.caps_importance + 1
         #bayes
         text_list = self.get_list_from_txt(email)
         spam, ham = self.bayes.evaluate_message(text_list)
-        return spam * spam_boost, ham
+        return spam, ham, caps_avg
 
     def init_bayes(self, train_corpus_dir):
         train_corpus = TrainingCorpus(train_corpus_dir)
-        caps_perc = 0
-        mail_count = 0
+        self.caps_avgs = {"SPAM": 0, "OK": 0, "ALL": 0}
+        mail_counts = {"SPAM": 0, "OK": 0, "ALL": 0}
         for spam_ham, train_mail in train_corpus.train_mails():
             self.bayes.add_spam_ham_count(spam_ham)
             text = self.get_list_from_txt(train_mail)
@@ -62,11 +66,23 @@ class MyFilter:
         # spam avg calculation
             counter = Pattern_counter()
             if spam_ham == "SPAM":
-                mail_count += 1
+                mail_counts["SPAM"] += 1
+                mail_counts["ALL"] += 1
                 for word in train_mail.split():
                     counter.add_word(word)
-                caps_perc += counter.caps_count/counter.word_count
-        self.avg_caps = caps_perc / mail_count
+                self.caps_avgs["SPAM"] += counter.caps_count / counter.word_count
+                self.caps_avgs["ALL"] += counter.caps_count / counter.word_count
+            if spam_ham == "OK":
+                mail_counts["OK"] += 1
+                mail_counts["ALL"] += 1
+                for word in train_mail.split():
+                    counter.add_word(word)
+                self.caps_avgs["OK"] += counter.caps_count / counter.word_count
+                self.caps_avgs["ALL"] += counter.caps_count / counter.word_count
+
+        self.caps_avgs["SPAM"] = self.caps_avgs["SPAM"] / mail_counts["SPAM"]
+        self.caps_avgs["OK"] = self.caps_avgs["OK"] / mail_counts["OK"]
+        self.caps_avgs["ALL"] = self.caps_avgs["ALL"] / mail_counts["ALL"]
 
 
     def write_to_file(self, results, test_corpus_dir):
@@ -95,7 +111,7 @@ if __name__ == "__main__":
     print("spam:", len([i for i in results2 if i[1] == "SPAM"]))
     print("ham:", len([i for i in results2 if i[1] == "OK"]))
     print("quality", compute_quality_for_corpus(test_dir))
-    print("caps avg:", myFilter.avg_caps)
+    print("caps avg:", myFilter.caps_avgs)
     print("spam dict len:", len(myFilter.bayes.spam_words_counter.keys()))
     print("ham dict len:", len(myFilter.bayes.ham_words_counter.keys()))
     #for i in myFilter.bayes.spam_words_counter.keys():
