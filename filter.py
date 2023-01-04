@@ -16,7 +16,6 @@ class MyFilter:
         self.bayes = Bayes()
         self.mails_blacklist = set()
         self.links_blacklist = set()
-        self.email_all_train_mails_caps_sum = 0
         self.max_caps_chars_avgs = {'@': 0, '$': 0, '!': 0, 'Caps': 0}
 
     def train(self, train_corpus_dir):
@@ -39,22 +38,34 @@ class MyFilter:
             return self.spam_tag
         text_list = self.get_list_from_txt(email)
         spam_perc, ham_perc = self.bayes.evaluate_message(text_list)
-        if spam_perc > ham_perc:
+        if spam_perc > ham_perc and abs(spam_perc - ham_perc) > 0.1:
             return self.spam_tag
         counter = Pattern_counter()
         for word in email.split():
-            if len(word) >= 25 and (word.isnumeric() or word.isalpha()):
-                return self.spam_tag
+            self.check_word_in_prob_ham(counter, word)
             counter.add_word(word)
         email_caps_char_avgs = counter.calculate_percentages()
-        train_emails_caps_avg = (self.email_all_train_mails_caps_sum 
-                                 / self.bayes.total_email_count)
         for char in email_caps_char_avgs.keys():
-            if email_caps_char_avgs[char] > (self.max_caps_chars_avgs[char]
-                                             + train_emails_caps_avg) / 3 :
+            if email_caps_char_avgs[char] > self.max_caps_chars_avgs[char] * 0.55:
                 return self.spam_tag
+        #If the difference between probabilities is small, 
+        #but the detailed checks have nout checked it as spam
+        if spam_perc > ham_perc: 
+            return self.spam_tag
         return self.ham_tag
 
+    def check_word_in_prob_ham(self, counter, word, count_bad_words = 0):
+        #Checks if the mail has big number of probable spam words or 
+        #there are very long words
+        if word in self.bayes.bad_words:
+                count_bad_words += 1
+        if (count_bad_words > 0 
+            and (count_bad_words / counter.word_count) > 0.02):
+            return self.spam_tag
+        if len(word) >= 25 and (word.isnumeric() or word.isalpha()):
+            return self.spam_tag
+        
+    
     def train_blacklist_sender(self, mail):
         for line in mail.split("\n"):
             words = line.split()
@@ -134,7 +145,6 @@ class MyFilter:
         for word in train_mail.split():
             counter.add_word(word)
         caps_chars_avgs = counter.calculate_percentages()
-        self.email_all_train_mails_caps_sum += caps_chars_avgs["Caps"]
         for char in caps_chars_avgs.keys():
             if caps_chars_avgs[char] > self.max_caps_chars_avgs[char]:
                 self.max_caps_chars_avgs[char] = caps_chars_avgs[char]
@@ -167,8 +177,8 @@ class MyFilter:
 
 
 if __name__ == "__main__":
-    train_dir = "1"
-    test_dir = "2"
+    train_dir = "2"
+    test_dir = "1"
     myFilter = MyFilter()
     myFilter.train(train_dir)
     results2 = myFilter.test(test_dir)
@@ -176,7 +186,6 @@ if __name__ == "__main__":
     print("ham:", len([i for i in results2 if i[1] == "OK"]))
     print("quality", compute_quality_for_corpus(test_dir))
     print("caps cahrs max avg:", myFilter.max_caps_chars_avgs)
-    print("caps only sum:", myFilter.email_all_train_mails_caps_sum)
     #print("links blacklist:", list(myFilter.links_blacklist))
     print("spam dict len:", len(myFilter.bayes.spam_words_counter.keys()))
     print("ham dict len:", len(myFilter.bayes.ham_words_counter.keys()))

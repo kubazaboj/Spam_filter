@@ -1,8 +1,8 @@
 SMOOTH_PAR = 1  
 # Smoothing parametr for calcuclating the probability of ham/spam
-USUAL_SPAM_BONUS = 100
+USUAL_SPAM_BONUS = 200
 # Bonus into words count for characteristic spam words (but barely in ham)
-OFTEN_SPAM_BONUS = 10
+OFTEN_SPAM_BONUS = 200
 # Bonus into words count for often used spam words (but sometimes in ham)
 class Bayes:
     def __init__(self):
@@ -20,6 +20,7 @@ class Bayes:
         self.parameters_spam = {}
         self.spam = "SPAM"
         self.ham = "OK"
+        self.bad_words = []
 
         # call this when training on new mail
 
@@ -97,14 +98,16 @@ class Bayes:
         #by multiple sources
         sexual_words = ["cum", "sex", "sexy", "cutie", "cuties", "mature", 
                         "girls", "babe", "babes", "hottie", "hotties", 
-                        "vibrator", "dildo", "slut", "xxx"]
+                        "vibrator", "dildo", "slut", "xxx", "cute"]
         #Sexual words are commonly used in spam messages
         sus_countries = ["nigeria", "angola", "sudan", "zimbabwe",
                          "uganda", "rwanda", "congo", "sudan"]
         #Some spam emails have specified country, especially in Africa
         cheap_words = ["guarantee", "guaranteed", "offer", "winner", "won",
                        "opportunity", "risk", "cash", "earn", "debt", "easy",
-                       "advice", "marketing", "partnership", "unwanted"]
+                       "advice", "marketing", "partnership", "unwanted", 
+                       "risk", "promise", "satisfaction", "secret", 
+                       "secrets", "amazing", "fees", "save"]
         #Some cheap words which are commonly used in unwanted marketing
         shady_words = ["diet", "loan", "lottery", "offshore", "warranty",
                        "viagra", "money", "hidden", "investment", "dvd",
@@ -112,8 +115,11 @@ class Bayes:
                        "100", "bonus", "urgent", "now", "buy", "limited",
                        "fund", "payment", "payments", "dead", "prank",
                        "real", "official", "legal", "lbs", "free", "deal",
-                       "deals", "fat", "slim", "spam"]
+                       "deals", "fat", "slim", "spam", "cheap", "expensive",
+                       "income", "weight"]
         #Some words used by shady individuals offering "remarkable" deal
+        self.bad_words = (sexual_words + sus_countries + cheap_words 
+                          + shady_words)
         self.parameters_ham = {word: USUAL_SPAM_BONUS * -1 for word in zip
                                (sexual_words, sus_countries)}
         self.parameters_spam = {word: USUAL_SPAM_BONUS for word in zip
