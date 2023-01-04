@@ -15,6 +15,7 @@ class MyFilter:
         self.hams = []
         self.bayes = Bayes()
         self.caps_avgs = {}
+        self.blacklist = []
 
     def train(self, train_corpus_dir):
         self.init_bayes(train_corpus_dir)
@@ -25,8 +26,8 @@ class MyFilter:
         corpus = Corpus(test_corpus_dir)
         results = []
         for file_name, mail in corpus.emails():
-            spam_perc, ham_perc = self.evaulate_mail(mail)
-            if spam_perc > ham_perc:
+            spam_perc, ham_perc, caps_avg = self.evaulate_mail(mail)
+            if spam_perc > ham_perc or caps_avg > 0.1:
                 results.append((file_name, "SPAM"))
             else:
                 results.append((file_name, "OK"))
@@ -43,13 +44,21 @@ class MyFilter:
         #bayes
         text_list = self.get_list_from_txt(email)
         spam, ham = self.bayes.evaluate_message(text_list)
-        return spam, ham
+        return spam, ham, caps_avg
+
+    def train_balcklist(self, mail):
+        for line in mail.split("\n"):
+            words = line.split()
+            if len(words) > 0:
+                if words[0] == "From:":
+                    mail = self.isolate_mail()
 
     def init_bayes(self, train_corpus_dir):
         train_corpus = TrainingCorpus(train_corpus_dir)
         self.caps_avgs = {"SPAM": 0, "OK": 0, "ALL": 0}
         mail_counts = {"SPAM": 0, "OK": 0, "ALL": 0}
         for spam_ham, train_mail in train_corpus.train_mails():
+            self.train_balcklist(train_mail)
             self.train_caps(train_mail, spam_ham, mail_counts)
             self.bayes.add_spam_ham_count(spam_ham)
             text = self.get_list_from_txt(train_mail)
