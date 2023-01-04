@@ -92,7 +92,7 @@ class Bayes:
         return p_spam_given_mess, p_ham_given_mess
 
     def clean_dictionaries(self):
-        min_dict_len = 500
+        min_dict_len = 1000
         # remove any words with less than min_num occurences
         min_num = 3
         spam_keys = list(self.spam_words_counter.keys())

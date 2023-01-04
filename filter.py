@@ -85,7 +85,7 @@ class MyFilter:
 
 
 if __name__ == "__main__":
-    train_dir = "2"
+    train_dir = "1"
     test_dir = "1"
     myFilter = MyFilter()
     t0 = time.time_ns()
