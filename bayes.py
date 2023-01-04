@@ -70,6 +70,7 @@ class Bayes:
         all_words_counter = self.combine_dictionaries(self.spam_words_counter, self.ham_words_counter)
         self.parameters_ham = {word: 0 for word in list(all_words_counter.keys())}
         self.parameters_spam = {word: 0 for word in list(all_words_counter.keys())}
+        self.add_mostly_spam_words()
         for word in all_words_counter.keys():
             n_word_spam = self.try_get_from_dict(self.spam_words_counter, word)
             p_word_spam = (n_word_spam + SMOOTH_PAR) / (self.word_count_spam + SMOOTH_PAR * len(all_words_counter.keys()))
@@ -79,6 +80,31 @@ class Bayes:
             p_word_ham = (n_word_ham + SMOOTH_PAR) / (self.word_count_ham + SMOOTH_PAR * len(all_words_counter.keys()))
             self.parameters_ham[word] = p_word_ham
 
+    def add_mostly_spam_words(self):
+        #Sexual words are commonly used in spam messages
+        sexual_words = ["cum", "sex", "sexy", "cutie", "cuties", "mature", "girls",
+                        "babe", "babes", "hottie", "hotties"]
+        #Some spam emails lure of big amount of money store in banks in Africa
+        african_countries = ["Nigeria", "Angola", "Sudan", "Zimbabwe", 
+                             "Uganda", "Rwanda", "Congo"]
+        #Some cheap words which are commonly used in unwanted marketing
+        cheap_words = ["guarantee", "guaranteed", "offer", "winner", "won",
+                       "opportunity", "risk", "cash", "earn", "debt"]
+        #Some words used by shady individuals offering "remarkable" deal
+        shady_words = ["diet", "loan", "lottery", "offshore", "warranty",
+                       "viagra", "money", "hidden", "investment", "dvd",
+                       "billing", "beneficiary", "congratulations",
+                       "100", "bonus", "urgent", "now", "buy", "limited"]
+        self.parameters_ham = {word: -100 for word in zip
+                               (sexual_words, african_countries)}
+        self.parameters_spam = {word: 100 for word in zip
+                                (sexual_words, african_countries)}
+        self.parameters_ham = {word: -10 for word in zip
+                               (cheap_words, shady_words)}
+        self.parameters_spam = {word: 10 for word in zip
+                                (cheap_words, shady_words)}
+    
+    
     # Function evaluating the messages based on words in it
     # and their parameters
 

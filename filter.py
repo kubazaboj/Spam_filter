@@ -12,7 +12,8 @@ class MyFilter:
         self.spams = []
         self.hams = []
         self.bayes = Bayes()
-        self.blacklist = set()
+        self.mails_blacklist = set()
+        self.links_blacklist = set()
         self.max_caps_chars_avgs = {'@': 0, '$': 0, '!': 0, 'Caps': 0}
 
     def train(self, train_corpus_dir):
@@ -29,7 +30,10 @@ class MyFilter:
         return results
 
     def evaluate_mail(self, email, filename):
-        if self.find_email_address(email) in self.blacklist:
+        if self.find_mail_address(email) in self.mails_blacklist:
+            return "SPAM"
+        if self.find_link(email) in self.links_blacklist:
+            print(email)
             return "SPAM"
         text_list = self.get_list_from_txt(email)
         spam_perc, ham_perc = self.bayes.evaluate_message(text_list)
@@ -44,15 +48,15 @@ class MyFilter:
                 return "SPAM"
         return "OK"
 
-    def train_balcklist(self, mail):
+    def train_blacklist_sender(self, mail):
         for line in mail.split("\n"):
             words = line.split()
             if len(words) > 0:
                 if words[0] == "From:":
                     mail = self.isolate_mail(words)
-                    self.blacklist.add(mail)
+                    self.mails_blacklist.add(mail)
 
-    def find_email_address(self, mail):
+    def find_mail_address(self, mail):
         for line in mail.split("\n"):
             words = line.split()
             if len(words) > 0:
@@ -69,12 +73,44 @@ class MyFilter:
                         mail += char
                 break
         return mail
+    
+    def train_spam_links(self, mail):
+        for line in mail.split("\n"):
+                link_start = "http://:"
+                print(line)
+                if "http://:" in line:
+                    print(line)
+                    link = self.isolate_link(line)
+                    self.links_blacklist.add(link)
+
+    def find_link(self, mail):
+        for line in mail.split("\n"):
+            words = line.split()
+            if len(words) > 0:
+                if "http://:" in words[0]:
+                    print(words[0])
+                    link = self.isolate_link(words)
+                    print(link)
+                    return link
+
+    def isolate_link(self, words):
+        link = ""
+        for word in words:
+            if "@" in word:
+                for char in word:
+                    if char.isnumeric() or char.isalpha() or char == "@":
+                        link += char
+                break
+        return link
+    
 
     def init_bayes(self, train_corpus_dir):
         train_corpus = TrainingCorpus(train_corpus_dir)
         for spam_ham, train_mail in train_corpus.train_mails():
             if spam_ham == "SPAM":
-                self.train_balcklist(train_mail)
+                self.train_blacklist_sender(train_mail)
+                self.train_spam_links(train_mail)
+                
             self.train_caps_chars(train_mail)
             self.bayes.add_spam_ham_count(spam_ham)
             text = self.get_list_from_txt(train_mail)
