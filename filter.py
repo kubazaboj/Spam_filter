@@ -76,31 +76,39 @@ class MyFilter:
     
     def train_spam_links(self, mail):
         for line in mail.split("\n"):
-                link_start = "http://:"
-                print(line)
-                if "http://:" in line:
-                    print(line)
-                    link = self.isolate_link(line)
-                    self.links_blacklist.add(link)
+                link_start = "http://"
+                #print(line)
+                if link_start in line:
+                    link = self.isolate_link(line.split())
+                    if link != "":
+                        self.links_blacklist.add(link)
+                        print(link)
+
 
     def find_link(self, mail):
+        link = ""
         for line in mail.split("\n"):
             words = line.split()
             if len(words) > 0:
-                if "http://:" in words[0]:
-                    print(words[0])
+                if "http://" in words:
                     link = self.isolate_link(words)
-                    print(link)
-                    return link
+        return link
 
     def isolate_link(self, words):
         link = ""
         for word in words:
-            if "@" in word:
+            if "http://" in word:
+                if len(word.split("http://")) != 1:
+                    word = word.split("http://")[1]
+                else:
+                    word = word.split("http://")[0]
                 for char in word:
-                    if char.isnumeric() or char.isalpha() or char == "@":
-                        link += char
-                break
+                    if char == "/":
+                        break
+                    link += char
+        if len(link) > 0:
+            if link[0].isnumeric():
+                return ""
         return link
     
 
