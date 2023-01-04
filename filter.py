@@ -14,17 +14,16 @@ class MyFilter:
         self.spams = []
         self.hams = []
         self.bayes = Bayes()
-        self.spam_pattern_counter = Pattern_counter()
-        self.ham_pattern_counter = Pattern_counter()
         self.pattern_threshold = 0.01
         self.importance_jump = 1.05
+        self.avg_caps = 0
+        self.caps_importance = 5
 
 
     def train(self, train_corpus_dir):
         self.init_bayes(train_corpus_dir)
         self.bayes.clean_dictionaries()
         self.bayes.calculate_parameters()
-        self.train_patterns(train_corpus_dir)
 
     def test(self, test_corpus_dir):
         corpus = Corpus(test_corpus_dir)
@@ -39,64 +38,32 @@ class MyFilter:
         return results
 
     def evaulate_mail(self, email):
+        counter = Pattern_counter()
+        for word in email.split():
+            counter.add_word(word)
+        caps_avg = counter.caps_count / counter.word_count
+        spam_boost = (caps_avg / self.avg_caps) * self.caps_importance + 1
         text_list = self.get_list_from_txt(email)
         spam, ham = self.bayes.evaluate_message(text_list)
-        #evaluate with patterns
-        new_counter = Pattern_counter()
-        for word in email.split():
-            new_counter.add_word(word)
-        new_counter.calculate_percentages()
-        for pattern in new_counter.percentages.keys():
-            if not pattern in list(self.spam_pattern_counter.percentages.keys()) + list(self.ham_pattern_counter.percentages.keys()):
-                continue
-            spam_perc = self.spam_pattern_counter.percentages[pattern]
-            if abs(new_counter.percentages[pattern] - spam_perc) < self.pattern_threshold * spam_perc:
-                spam *= self.spam_pattern_counter.importance[pattern]
-            ham_perc = self.ham_pattern_counter.percentages[pattern]
-            if abs(new_counter.percentages[pattern] - ham_perc) < self.pattern_threshold * ham_perc:
-                ham *= self.ham_pattern_counter.importance[pattern]
-        return spam, ham
+        return spam * spam_boost, ham
 
     def init_bayes(self, train_corpus_dir):
         train_corpus = TrainingCorpus(train_corpus_dir)
+        caps_perc = 0
+        mail_count = 0
         for spam_ham, train_mail in train_corpus.train_mails():
             self.bayes.add_spam_ham_count(spam_ham)
             text = self.get_list_from_txt(train_mail)
             for word in text:
                 self.bayes.add_word(word, spam_ham)
-            for word in train_mail.split():
-                self.add_to_pattern_counters(word, spam_ham)
-        self.spam_pattern_counter.calculate_percentages()
-        self.ham_pattern_counter.calculate_percentages()
-
-    def add_to_pattern_counters(self, word, spam_ham):
-        if spam_ham == "SPAM":
-            self.spam_pattern_counter.add_word(word)
-        else:
-            self.ham_pattern_counter.add_word(word)
-
-    def train_patterns(self, train_corpus_dir):
-        train_corpus = TrainingCorpus(train_corpus_dir)
-        for spam_ham, train_mail in train_corpus.train_mails():
-            new_counter = Pattern_counter()
-            for word in train_mail.split():
-                new_counter.add_word(word)
-            new_counter.calculate_percentages()
-            print(new_counter)
-            # check if any patterns are close to spam_pattern_counter
+            counter = Pattern_counter()
             if spam_ham == "SPAM":
-                for pattern in new_counter.percentages.keys():
-                    spam_perc = self.spam_pattern_counter.percentages[pattern]
-                    if abs(new_counter.percentages[pattern] - spam_perc) < self.pattern_threshold * spam_perc:
-                        self.spam_pattern_counter.importance[pattern] *= self.importance_jump
-                        self.ham_pattern_counter.importance[pattern] /= self.importance_jump
-            # check if any patterns are close to ham_pattern_counter
-            else:
-                for pattern in new_counter.percentages.keys():
-                    ham_perc = self.ham_pattern_counter.percentages[pattern]
-                    if abs(new_counter.percentages[pattern] - ham_perc) < self.pattern_threshold * ham_perc:
-                        self.spam_pattern_counter.importance[pattern] /= self.importance_jump
-                        self.ham_pattern_counter.importance[pattern] *= self.importance_jump
+                mail_count += 1
+                for word in train_mail.split():
+                    counter.add_word(word)
+                caps_perc += counter.caps_count/counter.word_count
+        self.avg_caps = caps_perc / mail_count
+
 
     def write_to_file(self, results, test_corpus_dir):
         with open(test_corpus_dir + "/!prediction.txt", "w") as f:
@@ -124,5 +91,4 @@ if __name__ == "__main__":
     print("spam:", len([i for i in results2 if i[1] == "SPAM"]))
     print("ham:", len([i for i in results2 if i[1] == "OK"]))
     print("quality", compute_quality_for_corpus(test_dir))
-    print("spam importance:", myFilter.spam_pattern_counter.importance)
-    print("ham importance:", myFilter.ham_pattern_counter.importance)
+    print("caps avg:", myFilter.avg_caps)
