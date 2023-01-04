@@ -1,5 +1,9 @@
-SMOOTH_PAR = 1  # Smoothing parametr for calcuclating the probability of ham/spam
-
+SMOOTH_PAR = 1  
+# Smoothing parametr for calcuclating the probability of ham/spam
+USUAL_SPAM_BONUS = 500 
+# Bonus into words count for characteristic spam words (but barely in ham)
+OFTEN_SPAM_BONUS = 50
+# Bonus into words count for often used spam words (but also in ham)
 class Bayes:
     def __init__(self):
         self.spam_words_counter = {}
@@ -93,15 +97,17 @@ class Bayes:
         #Some words used by shady individuals offering "remarkable" deal
         shady_words = ["diet", "loan", "lottery", "offshore", "warranty",
                        "viagra", "money", "hidden", "investment", "dvd",
-                       "billing", "beneficiary", "congratulations",
-                       "100", "bonus", "urgent", "now", "buy", "limited"]
-        self.parameters_ham = {word: -100 for word in zip
+                       "billing", "beneficiary", "congratulations", "account",
+                       "100", "bonus", "urgent", "now", "buy", "limited",
+                       "fund", "payment", "payments", "dead", "prank",
+                       "real", "official"]
+        self.parameters_ham = {word: USUAL_SPAM_BONUS * -1 for word in zip
                                (sexual_words, african_countries)}
-        self.parameters_spam = {word: 100 for word in zip
+        self.parameters_spam = {word: USUAL_SPAM_BONUS for word in zip
                                 (sexual_words, african_countries)}
-        self.parameters_ham = {word: -10 for word in zip
+        self.parameters_ham = {word: OFTEN_SPAM_BONUS * -1 for word in zip
                                (cheap_words, shady_words)}
-        self.parameters_spam = {word: 10 for word in zip
+        self.parameters_spam = {word: OFTEN_SPAM_BONUS for word in zip
                                 (cheap_words, shady_words)}
     
     

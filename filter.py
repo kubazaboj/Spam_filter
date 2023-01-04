@@ -11,6 +11,8 @@ class MyFilter:
         self.train_dir = {}
         self.spams = []
         self.hams = []
+        self.ham_tag = "OK"
+        self.spam_tag = "SPAM"
         self.bayes = Bayes()
         self.mails_blacklist = set()
         self.links_blacklist = set()
@@ -31,22 +33,23 @@ class MyFilter:
 
     def evaluate_mail(self, email, filename):
         if self.find_mail_address(email) in self.mails_blacklist:
-            return "SPAM"
+            return self.spam_tag
         if self.find_link(email) in self.links_blacklist:
-            print(email)
-            return "SPAM"
+            return self.spam_tag
         text_list = self.get_list_from_txt(email)
         spam_perc, ham_perc = self.bayes.evaluate_message(text_list)
         if spam_perc > ham_perc:
-            return "SPAM"
+            return self.spam_tag
         counter = Pattern_counter()
         for word in email.split():
+            if len(word) >= 25 and (word.isnumeric() or word.isalpha()):
+                return self.spam_tag
             counter.add_word(word)
         email_caps_char_avgs = counter.calculate_percentages()
         for char in email_caps_char_avgs.keys():
             if email_caps_char_avgs[char] > (self.max_caps_chars_avgs[char]) * 0.5:
-                return "SPAM"
-        return "OK"
+                return self.spam_tag
+        return self.ham_tag
 
     def train_blacklist_sender(self, mail):
         for line in mail.split("\n"):
@@ -77,12 +80,10 @@ class MyFilter:
     def train_spam_links(self, mail):
         for line in mail.split("\n"):
                 link_start = "http://"
-                #print(line)
                 if link_start in line:
                     link = self.isolate_link(line.split())
                     if link != "":
                         self.links_blacklist.add(link)
-                        print(link)
 
 
     def find_link(self, mail):
@@ -160,8 +161,8 @@ class MyFilter:
 
 
 if __name__ == "__main__":
-    train_dir = "2"
-    test_dir = "1"
+    train_dir = "1"
+    test_dir = "2"
     myFilter = MyFilter()
     myFilter.train(train_dir)
     results2 = myFilter.test(test_dir)
@@ -169,5 +170,6 @@ if __name__ == "__main__":
     print("ham:", len([i for i in results2 if i[1] == "OK"]))
     print("quality", compute_quality_for_corpus(test_dir))
     print("caps cahrs avg:", myFilter.max_caps_chars_avgs)
+    #print("links blacklist:", myFilter.links_blacklist)
     print("spam dict len:", len(myFilter.bayes.spam_words_counter.keys()))
     print("ham dict len:", len(myFilter.bayes.ham_words_counter.keys()))
