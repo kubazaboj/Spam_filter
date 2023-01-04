@@ -109,7 +109,7 @@ class Bayes:
 
         # remove words that appear in both spam and ham_filter
         # min_dif_mult = how many times bigger chance must there be to take as substantial evidence
-        min_dif_mult = 3
+        min_dif_mult = 4
         spam_keys = list(self.spam_words_counter.keys())
         for key in spam_keys:
             if key in self.ham_words_counter.keys():
@@ -129,7 +129,7 @@ class Bayes:
                     self.word_count_ham -= self.ham_words_counter[key]
                     self.word_count_total -= self.ham_words_counter[key]
                     self.ham_words_counter.pop(key)
-
+        #remove words shorter than min_len from dictionary
         min_len = 4
         spam_keys = list(self.spam_words_counter.keys())
         for key in spam_keys:
