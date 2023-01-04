@@ -91,7 +91,7 @@ class MyFilter:
                 self.max_caps_chars_avgs[char] = caps_chars_avgs[char]
 
     def write_to_file(self, results, test_corpus_dir):
-        with open(test_corpus_dir + "/!prediction.txt", "w") as f:
+        with open(test_corpus_dir + '/!prediction.txt', "w", encoding='utf-8') as f:
             for file_name, spam_ham in results:
                 f.write(file_name + " " + spam_ham + "\n")
 
