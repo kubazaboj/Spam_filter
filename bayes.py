@@ -1,5 +1,9 @@
-SMOOTH_PAR = 1  # Smoothing parametr for calcuclating the probability of ham/spam
-
+SMOOTH_PAR = 1  
+# Smoothing parametr for calcuclating the probability of ham/spam
+USUAL_SPAM_BONUS = 200
+# Bonus into words count for characteristic spam words (but barely in ham)
+OFTEN_SPAM_BONUS = 200
+# Bonus into words count for often used spam words (but sometimes in ham)
 class Bayes:
     def __init__(self):
         self.spam_words_counter = {}
@@ -16,6 +20,7 @@ class Bayes:
         self.parameters_spam = {}
         self.spam = "SPAM"
         self.ham = "OK"
+        self.bad_words = []
 
         # call this when training on new mail
 
@@ -39,7 +44,7 @@ class Bayes:
             self.add_to_dict(self.ham_words_counter, word)
             self.word_count_ham += 1
 
-        # ads count of given word, if word is not in dictionary it adds it there
+        # ads count of given word, if word is not in dictionary it is added
 
     def add_to_dict(self, dict, key):
         try:
@@ -67,18 +72,64 @@ class Bayes:
     def calculate_parameters(self):
         # Function calculating parameters based on their appearance in
         # ham and spam training messages
-        all_words_counter = self.combine_dictionaries(self.spam_words_counter, self.ham_words_counter)
-        self.parameters_ham = {word: 0 for word in list(all_words_counter.keys())}
-        self.parameters_spam = {word: 0 for word in list(all_words_counter.keys())}
+        all_words_counter = self.combine_dictionaries(self.spam_words_counter,
+                                                      self.ham_words_counter)
+        self.parameters_ham = {word: 0 for word in 
+                               list(all_words_counter.keys())}
+        self.parameters_spam = {word: 0 for word in 
+                                list(all_words_counter.keys())}
+        self.add_mostly_spam_words()
         for word in all_words_counter.keys():
             n_word_spam = self.try_get_from_dict(self.spam_words_counter, word)
-            p_word_spam = (n_word_spam + SMOOTH_PAR) / (self.word_count_spam + SMOOTH_PAR * len(all_words_counter.keys()))
+            p_word_spam = ((n_word_spam + SMOOTH_PAR) 
+                           / (self.word_count_spam + SMOOTH_PAR 
+                              * len(all_words_counter.keys())))
             self.parameters_spam[word] = p_word_spam
 
             n_word_ham = self.try_get_from_dict(self.ham_words_counter, word)
-            p_word_ham = (n_word_ham + SMOOTH_PAR) / (self.word_count_ham + SMOOTH_PAR * len(all_words_counter.keys()))
+            p_word_ham = ((n_word_ham + SMOOTH_PAR) 
+                          / (self.word_count_ham + SMOOTH_PAR 
+                             * len(all_words_counter.keys())))
             self.parameters_ham[word] = p_word_ham
 
+
+    def add_mostly_spam_words(self):
+        #Function with a list of words used in spam messages 
+        #by multiple sources
+        sexual_words = ["cum", "sex", "sexy", "cutie", "cuties", "mature", 
+                        "girls", "babe", "babes", "hottie", "hotties", 
+                        "vibrator", "dildo", "slut", "xxx", "cute"]
+        #Sexual words are commonly used in spam messages
+        sus_countries = ["nigeria", "angola", "sudan", "zimbabwe",
+                         "uganda", "rwanda", "congo", "sudan"]
+        #Some spam emails have specified country, especially in Africa
+        cheap_words = ["guarantee", "guaranteed", "offer", "winner", "won",
+                       "opportunity", "risk", "cash", "earn", "debt", "easy",
+                       "advice", "marketing", "partnership", "unwanted", 
+                       "risk", "promise", "satisfaction", "secret", 
+                       "secrets", "amazing", "fees", "save"]
+        #Some cheap words which are commonly used in unwanted marketing
+        shady_words = ["diet", "loan", "lottery", "offshore", "warranty",
+                       "viagra", "money", "hidden", "investment", "dvd",
+                       "billing", "beneficiary", "congratulations", "account",
+                       "100", "bonus", "urgent", "now", "buy", "limited",
+                       "fund", "payment", "payments", "dead", "prank",
+                       "real", "official", "legal", "lbs", "free", "deal",
+                       "deals", "fat", "slim", "spam", "cheap", "expensive",
+                       "income", "weight"]
+        #Some words used by shady individuals offering "remarkable" deal
+        self.bad_words = (sexual_words + sus_countries + cheap_words 
+                          + shady_words)
+        self.parameters_ham = {word: USUAL_SPAM_BONUS * -1 for word in zip
+                               (sexual_words, sus_countries)}
+        self.parameters_spam = {word: USUAL_SPAM_BONUS for word in zip
+                                (sexual_words, sus_countries)}
+        self.parameters_ham = {word: OFTEN_SPAM_BONUS * -1 for word in zip
+                               (cheap_words, shady_words)}
+        self.parameters_spam = {word: OFTEN_SPAM_BONUS for word in zip
+                                (cheap_words, shady_words)}
+    
+    
     # Function evaluating the messages based on words in it
     # and their parameters
 
@@ -108,24 +159,32 @@ class Bayes:
         min_num = 3
         spam_keys = list(self.spam_words_counter.keys())
         for key in spam_keys:
-            if self.spam_words_counter[key] < min_num and len(self.spam_words_counter.keys()) > min_dict_len:
+            if (self.spam_words_counter[key] < min_num 
+                and len(self.spam_words_counter.keys()) > min_dict_len):
                 self.pop_key_spam(key)
         ham_keys = list(self.ham_words_counter.keys())
         for key in ham_keys:
-            if self.ham_words_counter[key] < min_num and len(self.ham_words_counter.keys()) > min_dict_len:
+            if (self.ham_words_counter[key] < min_num 
+                and len(self.ham_words_counter.keys()) > min_dict_len):
                 self.pop_key_ham(key)
 
         # remove words that appear in both spam and ham_filter
-        # min_dif_mult = how many times bigger chance must probability be to take as substantial evidence
+        # min_dif_mult = how many times bigger chance must probability be 
+        # to take it as substantial evidence
         min_dif_mult = 4
         spam_keys = list(self.spam_words_counter.keys())
         for key in spam_keys:
             spam_len_ok = len(self.spam_words_counter.keys()) > min_dict_len
             ham_len_ok = len(self.ham_words_counter.keys()) > min_dict_len
-            if key in self.ham_words_counter.keys() and spam_len_ok and ham_len_ok:
-                word_spam_perc = self.spam_words_counter[key]/self.word_count_spam
-                word_ham_perc = self.ham_words_counter[key]/self.word_count_ham
-                if max(word_spam_perc, word_ham_perc) / min(word_spam_perc, word_ham_perc) < min_dif_mult:
+            if (key in self.ham_words_counter.keys() 
+                and spam_len_ok and ham_len_ok):
+                word_spam_perc = (self.spam_words_counter[key] 
+                                  / self.word_count_spam)
+                word_ham_perc = (self.ham_words_counter[key] 
+                                 / self.word_count_ham)
+                max_word_label_prct = max(word_spam_perc, word_ham_perc)
+                min_word_label_prct = min(word_spam_perc, word_ham_perc)
+                if max_word_label_prct / min_word_label_prct < min_dif_mult:
                     self.pop_key_both(key)
                 elif word_spam_perc < word_ham_perc:
                     self.pop_key_spam(key)
@@ -135,11 +194,13 @@ class Bayes:
         min_len = 4
         spam_keys = list(self.spam_words_counter.keys())
         for key in spam_keys:
-            if len(key) < min_len and len(self.spam_words_counter.keys()) > min_dict_len:
+            if ((len(key) < min_len) 
+                and len(self.spam_words_counter.keys()) > min_dict_len):
                 self.pop_key_spam(key)
         ham_keys = list(self.ham_words_counter.keys())
         for key in ham_keys:
-            if len(key) < min_len and len(self.ham_words_counter.keys()) > min_dict_len:
+            if ((len(key) < min_len) 
+                and (len(self.ham_words_counter.keys()) > min_dict_len)):
                 self.pop_key_ham(key)
 
         # removes words with the least probability from dictionaries
@@ -151,12 +212,14 @@ class Bayes:
 
         for key in spam_keys:
             spam_len_ok = len(self.spam_words_counter.keys()) > min_dict_len
-            if self.spam_words_counter[key] / self.word_count_spam < min_prob and spam_len_ok:
+            if (self.spam_words_counter[key] / self.word_count_spam < min_prob 
+                and spam_len_ok):
                 self.pop_key_spam(key)
         ham_keys = list(self.ham_words_counter.keys())
         for key in ham_keys:
             ham_len_ok = len(self.ham_words_counter.keys()) > min_dict_len
-            if self.ham_words_counter[key] / self.word_count_ham < min_prob  and ham_len_ok:
+            if (self.ham_words_counter[key] / self.word_count_ham < min_prob
+            and ham_len_ok):
                 self.pop_key_ham(key)
 
     def pop_key_spam(self, key):
@@ -172,6 +235,7 @@ class Bayes:
     def pop_key_both(self, key):
         self.word_count_ham -= self.ham_words_counter[key]
         self.word_count_spam -= self.spam_words_counter[key]
-        self.word_count_total -= self.ham_words_counter[key] + self.spam_words_counter[key]
+        self.word_count_total -= (self.ham_words_counter[key] 
+                                  + self.spam_words_counter[key])
         self.ham_words_counter.pop(key)
         self.spam_words_counter.pop(key)
