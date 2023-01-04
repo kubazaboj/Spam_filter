@@ -9,7 +9,7 @@ class Pattern_counter:
 
     # add word to pattern counter and check for all possible patterns
     def add_word(self, word):
-        chars_to_check = ["!", "?", "$", "@"]
+        chars_to_check = ["!", "$", "@"]
         self.word_count += 1
         for char in chars_to_check:
             self.check_char(word, char)
