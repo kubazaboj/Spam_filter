@@ -8,6 +8,7 @@ class Pattern_counter:
         self.letter_count = 0
 
     # add word to pattern counter and check for all possible patterns
+
     def add_word(self, word):
         chars_to_check = ["!", "$", "@"]
         self.word_count += 1
@@ -16,19 +17,15 @@ class Pattern_counter:
         self.check_caps_lock(word)
 
     # checks if word has capslock if yes adds to caps_count
+
     def check_caps_lock(self, word):
         self.word_count += 1
         if word.isupper():
             self.caps_count += 1
             self.add_to_dict(self.importance, "Caps")
-             
-        #for letter in word:
-        #    self.letter_count += 1
-        #    if not letter.islower() and letter.isalpha():
-        #        self.caps_count += 1
-        #        self.add_to_dict(self.importance, "Caps", value=0)
 
-    # check word for charackters, adds to char_counts dictionary
+    # check word for characters, adds to char_counts dictionary
+
     def check_char(self, word, char):
         for letter in word:
             if letter == char:
