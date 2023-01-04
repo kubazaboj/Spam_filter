@@ -16,6 +16,7 @@ class MyFilter:
         self.bayes = Bayes()
         self.mails_blacklist = set()
         self.links_blacklist = set()
+        self.email_all_train_mails_caps_sum = 0
         self.max_caps_chars_avgs = {'@': 0, '$': 0, '!': 0, 'Caps': 0}
 
     def train(self, train_corpus_dir):
@@ -46,8 +47,11 @@ class MyFilter:
                 return self.spam_tag
             counter.add_word(word)
         email_caps_char_avgs = counter.calculate_percentages()
+        train_emails_caps_avg = (self.email_all_train_mails_caps_sum 
+                                 / self.bayes.total_email_count)
         for char in email_caps_char_avgs.keys():
-            if email_caps_char_avgs[char] > (self.max_caps_chars_avgs[char]) * 0.5:
+            if email_caps_char_avgs[char] > (self.max_caps_chars_avgs[char]
+                                             + train_emails_caps_avg) / 3 :
                 return self.spam_tag
         return self.ham_tag
 
@@ -116,10 +120,9 @@ class MyFilter:
     def init_bayes(self, train_corpus_dir):
         train_corpus = TrainingCorpus(train_corpus_dir)
         for spam_ham, train_mail in train_corpus.train_mails():
-            if spam_ham == "SPAM":
+            if spam_ham == self.spam_tag:
                 self.train_blacklist_sender(train_mail)
                 self.train_spam_links(train_mail)
-                
             self.train_caps_chars(train_mail)
             self.bayes.add_spam_ham_count(spam_ham)
             text = self.get_list_from_txt(train_mail)
@@ -131,16 +134,19 @@ class MyFilter:
         for word in train_mail.split():
             counter.add_word(word)
         caps_chars_avgs = counter.calculate_percentages()
+        self.email_all_train_mails_caps_sum += caps_chars_avgs["Caps"]
         for char in caps_chars_avgs.keys():
             if caps_chars_avgs[char] > self.max_caps_chars_avgs[char]:
                 self.max_caps_chars_avgs[char] = caps_chars_avgs[char]
 
     def write_to_file(self, results, test_corpus_dir):
-        with open(test_corpus_dir + '/!prediction.txt', "w", encoding='utf-8') as f:
+        with open(test_corpus_dir + '/!prediction.txt', 
+                  "w", encoding='utf-8') as f:
             for file_name, spam_ham in results:
                 f.write(file_name + " " + spam_ham + "\n")
 
-    # removes not interesting parts of texts and converts it to list without duplicates
+    # removes not interesting parts of texts and converts it to list
+    # without duplicates
 
     def get_list_from_txt(self, text):
         text = utils.skin_text(text)
@@ -169,7 +175,8 @@ if __name__ == "__main__":
     print("spam:", len([i for i in results2 if i[1] == "SPAM"]))
     print("ham:", len([i for i in results2 if i[1] == "OK"]))
     print("quality", compute_quality_for_corpus(test_dir))
-    print("caps cahrs avg:", myFilter.max_caps_chars_avgs)
-    #print("links blacklist:", myFilter.links_blacklist)
+    print("caps cahrs max avg:", myFilter.max_caps_chars_avgs)
+    print("caps only sum:", myFilter.email_all_train_mails_caps_sum)
+    #print("links blacklist:", list(myFilter.links_blacklist))
     print("spam dict len:", len(myFilter.bayes.spam_words_counter.keys()))
     print("ham dict len:", len(myFilter.bayes.ham_words_counter.keys()))

@@ -19,6 +19,16 @@ class Pattern_counter:
     # checks if word has capslock if yes adds to caps_count
 
     def check_caps_lock(self, word):
+        count_upper = 0
+        upper_seq = []
+        test = []
+        if word.isupper() and word.isalpha():
+            count_upper += 1
+            upper_seq.append(word)
+        elif count_upper > 2:
+            print(upper_seq)
+        else:
+            count_upper = 0
         self.word_count += 1
         if word.isupper():
             self.caps_count += 1
