@@ -44,8 +44,5 @@ class Pattern_counter:
     def calculate_percentages(self):
         for key in self.char_counts.keys():
             self.percentages[key] = self.char_counts[key] / self.word_count
-        print("All Caps: " + str(self.caps_count))
-        print("All words in email: " + str(self.word_count))
         self.percentages["Caps"] = self.caps_count / self.word_count
-        print("Average no. Caps in spam: " + str(self.percentages["Caps"]))
         return self.percentages

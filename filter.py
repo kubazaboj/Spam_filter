@@ -78,36 +78,28 @@ class MyFilter:
     def init_bayes(self, train_corpus_dir):
         train_corpus = TrainingCorpus(train_corpus_dir)
         self.caps_avgs = {"SPAM": 0, "OK": 0, "ALL": 0}
+        self.max_caps_chars_avgs = {'@': 0, '$': 0, '!': 0, '?': 0, 'Caps': 0}
         mail_counts = {"SPAM": 0, "OK": 0, "ALL": 0}
         for spam_ham, train_mail in train_corpus.train_mails():
             if spam_ham == "SPAM":
                 self.train_balcklist(train_mail)
-            self.train_caps(train_mail, spam_ham, mail_counts)
+            self.train_caps_chars(train_mail, spam_ham, mail_counts)
             self.bayes.add_spam_ham_count(spam_ham)
             text = self.get_list_from_txt(train_mail)
             for word in text:
                 self.bayes.add_word(word, spam_ham)
-        self.caps_avgs["SPAM"] = self.caps_avgs["SPAM"] / mail_counts["SPAM"]
-        self.caps_avgs["OK"] = self.caps_avgs["OK"] / mail_counts["OK"]
-        self.caps_avgs["ALL"] = self.caps_avgs["ALL"] / mail_counts["ALL"]
 
 
-    def train_caps(self, train_mail, spam_ham, mail_counts):
+    def train_caps_chars(self, train_mail, spam_ham, mail_counts):
         counter = Pattern_counter()
-        if spam_ham == "SPAM":
-            mail_counts["SPAM"] += 1
-            mail_counts["ALL"] += 1
-            for word in train_mail.split():
-                counter.add_word(word)
-            self.caps_avgs["SPAM"] += counter.caps_count / counter.word_count
-            self.caps_avgs["ALL"] += counter.caps_count / counter.word_count
-        if spam_ham == "OK":
-            mail_counts["OK"] += 1
-            mail_counts["ALL"] += 1
-            for word in train_mail.split():
-                counter.add_word(word)
-            self.caps_avgs["OK"] += counter.caps_count / counter.word_count
-            self.caps_avgs["ALL"] += counter.caps_count / counter.word_count
+        for word in train_mail.split():
+            counter.add_word(word)
+        
+        caps_chars_avgs = counter.calculate_percentages()
+        print("maximal caps and chars average", self.max_caps_chars_avgs)
+        for char in caps_chars_avgs.keys():
+            if caps_chars_avgs[char] > self.max_caps_chars_avgs[char]:
+                self.max_caps_chars_avgs[char] = caps_chars_avgs[char]
 
     def write_to_file(self, results, test_corpus_dir):
         with open(test_corpus_dir + "/!prediction.txt", "w") as f:
