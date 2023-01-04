@@ -37,9 +37,15 @@ class MyFilter:
         spam_perc, ham_perc = self.bayes.evaluate_message(text_list)
         if spam_perc > ham_perc:
             return "SPAM"
+        caps_line_count = 0
         counter = Pattern_counter()
-        for word in email.split():
-            counter.add_word(word)
+        for line in email.split("\n"):
+            if self.check_caps_line(utils.skin_text(line)):
+                caps_line_count += 1
+            for word in line.split():
+                counter.add_word(word)
+        if caps_line_count > 5:
+            return "SPAM"
         email_caps_char_avgs = counter.calculate_percentages()
         for char in email_caps_char_avgs.keys():
             if email_caps_char_avgs[char] > (self.max_caps_chars_avgs[char]) * 0.5:
@@ -106,10 +112,20 @@ class MyFilter:
         text_list = utils.remove_duplicates(text_list)
         return text_list
 
+    def check_caps_line(self, line):
+        if len(line.split()) == 0:
+            return False
+        for word in line.split():
+            if not word.isupper() or len(word) > 20:
+                    return False
+        if len(line.split()) < 3:
+            return False
+        return True
+
 
 if __name__ == "__main__":
-    train_dir = "1"
-    test_dir = "2"
+    train_dir = "2"
+    test_dir = "1"
     myFilter = MyFilter()
     t0 = time.time_ns()
     myFilter.train(train_dir)
