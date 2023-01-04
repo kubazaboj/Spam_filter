@@ -92,17 +92,18 @@ class Bayes:
         return p_spam_given_mess, p_ham_given_mess
 
     def clean_dictionaries(self):
+        min_dict_len = 500
         # remove any words with less than min_num occurences
         min_num = 3
         spam_keys = list(self.spam_words_counter.keys())
         for i in spam_keys:
-            if self.spam_words_counter[i] < min_num:
+            if self.spam_words_counter[i] < min_num and len(self.spam_words_counter.keys()) > min_dict_len:
                 self.word_count_spam -= self.spam_words_counter[i]
                 self.word_count_total -= self.spam_words_counter[i]
                 self.spam_words_counter.pop(i)
         ham_keys = list(self.ham_words_counter.keys())
         for i in ham_keys:
-            if self.ham_words_counter[i] < min_num:
+            if self.ham_words_counter[i] < min_num and len(self.ham_words_counter.keys()) > min_dict_len:
                 self.word_count_ham -= self.ham_words_counter[i]
                 self.word_count_total -= self.ham_words_counter[i]
                 self.ham_words_counter.pop(i)
@@ -112,7 +113,8 @@ class Bayes:
         min_dif_mult = 4
         spam_keys = list(self.spam_words_counter.keys())
         for key in spam_keys:
-            if key in self.ham_words_counter.keys():
+            ok =  len(self.spam_words_counter.keys()) > min_dict_len and len(self.ham_words_counter.keys()) > min_dict_len
+            if key in self.ham_words_counter.keys() and ok:
                 word_spam_perc = self.spam_words_counter[key]/self.word_count_spam
                 word_ham_perc = self.ham_words_counter[key]/self.word_count_ham
                 if max(word_spam_perc, word_ham_perc) / min(word_spam_perc, word_ham_perc) < min_dif_mult:
@@ -133,13 +135,28 @@ class Bayes:
         min_len = 4
         spam_keys = list(self.spam_words_counter.keys())
         for key in spam_keys:
-            if len(key) < min_len:
+            if len(key) < min_len and len(self.spam_words_counter.keys()) > min_dict_len:
                 self.word_count_spam -= self.spam_words_counter[key]
                 self.word_count_total -= self.spam_words_counter[key]
                 self.spam_words_counter.pop(key)
         ham_keys = list(self.ham_words_counter.keys())
         for key in ham_keys:
-            if len(key) < min_len:
+            if len(key) < min_len and len(self.ham_words_counter.keys()) > min_dict_len:
+                self.word_count_ham -= self.ham_words_counter[key]
+                self.word_count_total -= self.ham_words_counter[key]
+                self.ham_words_counter.pop(key)
+
+        #odsrani z dictionaries slova s mensi pravdepodobnosti nez min_prob
+        min_prob = 0.0005
+        spam_keys = list(self.spam_words_counter.keys())
+        for key in spam_keys:
+            if self.spam_words_counter[key] / self.word_count_spam < min_prob and len(self.spam_words_counter.keys()) > min_dict_len:
+                self.word_count_spam -= self.spam_words_counter[key]
+                self.word_count_total -= self.spam_words_counter[key]
+                self.spam_words_counter.pop(key)
+        ham_keys = list(self.ham_words_counter.keys())
+        for key in ham_keys:
+            if self.ham_words_counter[key] / self.word_count_ham < min_prob  and len(self.ham_words_counter.keys()) > min_dict_len:
                 self.word_count_ham -= self.ham_words_counter[key]
                 self.word_count_total -= self.ham_words_counter[key]
                 self.ham_words_counter.pop(key)

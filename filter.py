@@ -34,6 +34,7 @@ class MyFilter:
                 results.append((file_name, "SPAM"))
             else:
                 results.append((file_name, "OK"))
+            #print(spam_perc, ham_perc, results[-1][1])
         self.write_to_file(results, test_corpus_dir)
         return results
 
@@ -95,5 +96,7 @@ if __name__ == "__main__":
     print("ham:", len([i for i in results2 if i[1] == "OK"]))
     print("quality", compute_quality_for_corpus(test_dir))
     print("caps avg:", myFilter.avg_caps)
+    print("spam dict len:", len(myFilter.bayes.spam_words_counter.keys()))
+    print("ham dict len:", len(myFilter.bayes.ham_words_counter.keys()))
     #for i in myFilter.bayes.spam_words_counter.keys():
     #    print(i)
